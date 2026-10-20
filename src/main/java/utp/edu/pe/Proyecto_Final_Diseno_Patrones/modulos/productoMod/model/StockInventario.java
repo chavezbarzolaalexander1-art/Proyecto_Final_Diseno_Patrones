@@ -23,8 +23,8 @@ public class StockInventario {
 
     private LocalDateTime ultimaActualizacion;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @MapsId
-    @JoinColumn(name = "producto_id", nullable = false, unique = true)
+    @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
 }
