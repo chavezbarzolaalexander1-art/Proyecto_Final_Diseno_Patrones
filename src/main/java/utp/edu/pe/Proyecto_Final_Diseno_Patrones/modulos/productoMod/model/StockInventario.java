@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 public class StockInventario {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
@@ -25,6 +24,7 @@ public class StockInventario {
     private LocalDateTime ultimaActualizacion;
 
     @OneToOne
+    @MapsId
     @JoinColumn(name = "producto_id", nullable = false, unique = true)
     private Producto producto;
 }
