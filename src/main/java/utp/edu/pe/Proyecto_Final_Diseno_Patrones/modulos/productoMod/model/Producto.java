@@ -34,4 +34,7 @@ public class Producto {
     @ManyToOne
     @JoinColumn(name = "impuesto_id", nullable = false)
     private Impuesto impuesto;
+
+    @OneToOne(mappedBy = "producto", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private StockInventario stockInventario;
 }
