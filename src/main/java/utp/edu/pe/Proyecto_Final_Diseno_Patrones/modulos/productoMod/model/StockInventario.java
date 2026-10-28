@@ -1,4 +1,5 @@
 package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.model;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,5 +27,6 @@ public class StockInventario {
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
     @JoinColumn(name = "producto_id", nullable = false)
+    @JsonIgnore
     private Producto producto;
 }
