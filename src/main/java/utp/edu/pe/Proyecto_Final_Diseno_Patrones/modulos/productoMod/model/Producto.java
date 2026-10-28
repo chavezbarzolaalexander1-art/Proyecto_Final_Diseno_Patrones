@@ -2,6 +2,8 @@ package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "producto")
 @Data
@@ -37,4 +39,13 @@ public class Producto {
 
     @OneToOne(mappedBy = "producto", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private StockInventario stockInventario;
+    public void inicializarStock(Integer cantidadInicial, Integer stockMinimo) {
+        StockInventario stock = StockInventario.builder()
+                .cantidadDisponible(cantidadInicial != null ? cantidadInicial : 0)
+                .stockMinimo(stockMinimo != null ? stockMinimo : 10)
+                .ultimaActualizacion(LocalDateTime.now())
+                .producto(this)
+                .build();
+        this.stockInventario = stock;
+    }
 }
