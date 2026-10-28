@@ -8,6 +8,8 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class SwaggerConfig {
+
+    /**Swagger UI: http://localhost:8080/swagger-ui.html o http://localhost:8080/swagger-ui/index.html*/
     @Bean
     public OpenAPI springShopOpenAPI() {
         return new OpenAPI()
