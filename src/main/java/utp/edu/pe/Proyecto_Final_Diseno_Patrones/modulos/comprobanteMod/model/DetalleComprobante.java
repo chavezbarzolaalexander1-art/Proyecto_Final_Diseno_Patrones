@@ -1,15 +1,16 @@
 package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.*;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.model.Producto;
+
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "detalle_comprobante")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -22,14 +23,15 @@ public class DetalleComprobante {
     @Column(nullable = false)
     private Integer cantidad;
 
-    @Column(nullable = false)
-    private Double precioUnitario;
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal precioUnitario;
 
-    @Column(nullable = false)
-    private Double subtotal;
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal subtotal;
 
     @ManyToOne
     @JoinColumn(name = "comprobante_id", nullable = false)
+    @JsonIgnore
     private ComprobantePago comprobantePago;
 
     @ManyToOne

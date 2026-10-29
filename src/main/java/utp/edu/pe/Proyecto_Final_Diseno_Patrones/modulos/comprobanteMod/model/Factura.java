@@ -1,14 +1,15 @@
 package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "factura")
-@Data
-@EqualsAndHashCode(callSuper = true)
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Factura extends ComprobantePago {
 
     @Column(length = 20)
