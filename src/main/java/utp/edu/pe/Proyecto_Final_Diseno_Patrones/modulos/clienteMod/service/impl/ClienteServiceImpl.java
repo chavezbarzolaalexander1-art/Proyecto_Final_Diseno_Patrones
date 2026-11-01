@@ -1,31 +1,57 @@
 package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.service.impl;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.dto.ClienteDto;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.dto.ClienteRequest;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.dto.ClienteResponse;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.mapper.ClienteMapper;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.model.Cliente;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.repository.ClienteRepository;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.service.ClienteService;
 
 import java.util.List;
-import java.util.Optional;
+
 
 @Service
+@RequiredArgsConstructor
 public class ClienteServiceImpl implements ClienteService {
+    private final ClienteRepository clienteRepository;
+    private final ClienteMapper clienteMapper;
 
     @Override
-    public List<ClienteDto> listarClientes() {
-        return List.of();
+    public ClienteResponse guardarCliente(ClienteRequest request) {
+        Cliente cliente = clienteMapper.toEntity(request);
+        Cliente clienteGuardado = clienteRepository.save(cliente);
+        return clienteMapper.toResponse(clienteGuardado);
     }
 
     @Override
-    public Optional<ClienteDto> buscarPorId(Long id) {
-        return Optional.empty();
+    public ClienteResponse actualizarCliente(Long id, ClienteRequest request) {
+        Cliente clienteExistente = clienteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado con id: " + id));
+        clienteMapper.updateEntityFromRequest(request, clienteExistente);
+
+
+        return clienteMapper.toResponse(clienteRepository.save(clienteExistente));
     }
 
     @Override
-    public ClienteDto guardarCliente(ClienteDto clienteDto) {
-        return clienteDto;
+    public List<ClienteResponse> listarClientes() {
+        return clienteRepository.findAll().stream().map(clienteMapper::toResponse).toList();
+    }
+
+    @Override
+    public ClienteResponse buscarPorId(Long id) {
+        Cliente cliente = clienteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado con id: " + id));
+        return clienteMapper.toResponse(cliente);
     }
 
     @Override
     public void eliminarCliente(Long id) {
+        if (!clienteRepository.existsById(id)) {
+            throw new RuntimeException("Cliente no encontrado con id: " + id);
+        }
+        clienteRepository.deleteById(id);
     }
 }

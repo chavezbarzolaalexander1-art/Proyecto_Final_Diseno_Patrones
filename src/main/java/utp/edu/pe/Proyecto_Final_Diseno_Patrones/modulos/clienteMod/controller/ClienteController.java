@@ -1,35 +1,39 @@
 package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.dto.ClienteDto;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.dto.ClienteRequest;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.dto.ClienteResponse;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.service.ClienteService;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/clientes")
+@RequiredArgsConstructor
 public class ClienteController {
-
-    @Autowired
-    private ClienteService clienteService;
+    private final ClienteService clienteService;
 
     @GetMapping
-    public ResponseEntity<List<ClienteDto>> listar() {
+    public ResponseEntity<List<ClienteResponse>> listar() {
         return ResponseEntity.ok(clienteService.listarClientes());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ClienteDto> buscarPorId(@PathVariable Long id) {
-        return clienteService.buscarPorId(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<ClienteResponse> buscarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(clienteService.buscarPorId(id));
     }
 
     @PostMapping
-    public ResponseEntity<ClienteDto> guardar(@RequestBody ClienteDto clienteDto) {
-        return ResponseEntity.ok(clienteService.guardarCliente(clienteDto));
+    public ResponseEntity<ClienteResponse> guardar(@RequestBody ClienteRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(clienteService.guardarCliente(request));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ClienteResponse> actualizar(@PathVariable Long id, @RequestBody ClienteRequest request) {
+        return ResponseEntity.ok(clienteService.actualizarCliente(id, request));
     }
 
     @DeleteMapping("/{id}")

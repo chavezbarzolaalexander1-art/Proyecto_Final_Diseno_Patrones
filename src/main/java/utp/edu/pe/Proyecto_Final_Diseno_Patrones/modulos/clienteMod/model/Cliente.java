@@ -1,4 +1,5 @@
 package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.model;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,7 +27,10 @@ public class Cliente {
     @Column(length = 15)
     private String telefono;
 
-    @ManyToOne
-    @JoinColumn(name = "tipo_documento_id", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_documento", nullable = false, length = 20)
     private TipoDocumento tipoDocumento;
+
+    @Embedded
+    private DireccionCliente direccion;
 }
