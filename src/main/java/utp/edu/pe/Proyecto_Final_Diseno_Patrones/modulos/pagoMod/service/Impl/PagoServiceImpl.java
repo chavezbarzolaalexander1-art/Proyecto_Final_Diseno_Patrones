@@ -43,7 +43,7 @@ public class PagoServiceImpl implements PagoService {
         EstadoComprobanteState estadoActual = contextoEstado.obtenerEstado(comprobante.getEstado());
         estadoActual.validarPermitePago(comprobante);
 
-        // 2. Instanciar el pago
+        // 2. Crear la entidad Pago base (sin comisión ni montoNeto aún)
         Pago pago = Pago.builder()
                 .monto(request.monto())
                 .fechaPago(LocalDateTime.now())
@@ -52,11 +52,17 @@ public class PagoServiceImpl implements PagoService {
                 .metodoPago(obtenerOCrearMetodo(request.metodoPago()))
                 .build();
 
-        // 3. Validar y procesar comisiones según medio de pago (Patrón Strategy)
+        // 3. Procesar el pago con Strategy (obtiene la comisión y el monto neto)
         ResultadoPago resultado = procesadorPago.procesar(pago);
+
+        // 4. Asignar la comisión y monto neto calculados a la entidad
+        pago.setComision(resultado.comision());
+        pago.setMontoNeto(resultado.montoNeto());
+
+        // 5. Guardar en base de datos
         Pago guardado = pagoRepository.save(pago);
 
-        // 4. Evaluar si cambia a PAGADO tras acumular este abono (Patrón State)
+        // 6. Evaluar si cambia a PAGADO tras acumular este abono (Patrón State)
         double totalPagado = calcularTotalPagado(comprobante.getId());
         estadoActual.evaluarSiguienteEstadoTrasPago(comprobante, totalPagado);
         comprobanteRepository.save(comprobante);
@@ -72,7 +78,6 @@ public class PagoServiceImpl implements PagoService {
                 guardado.getFechaPago()
         );
     }
-
     @Override
     @Transactional(readOnly = true)
     public List<PagoResponse> listarPorComprobante(Long comprobanteId) {
@@ -82,8 +87,8 @@ public class PagoServiceImpl implements PagoService {
                         comprobanteId,
                         p.getMetodoPago().getNombre(),
                         p.getMonto(),
-                        null,
-                        null,
+                        p.getComision(),
+                        p.getMontoNeto(),
                         p.getNumeroTransaccion(),
                         p.getFechaPago()
                 ))

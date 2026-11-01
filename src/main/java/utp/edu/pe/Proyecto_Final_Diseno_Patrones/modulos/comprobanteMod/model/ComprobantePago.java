@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.model.Cliente;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.model.Vendedor;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.model.CondicionPago;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -60,6 +61,10 @@ public abstract class ComprobantePago {
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false, length = 20)
     private EstadoComprobante estado;
+
+    @ManyToOne
+    @JoinColumn(name = "condicion_pago_id")
+    private CondicionPago condicionPago;
 
     @OneToMany(
             mappedBy = "comprobantePago",

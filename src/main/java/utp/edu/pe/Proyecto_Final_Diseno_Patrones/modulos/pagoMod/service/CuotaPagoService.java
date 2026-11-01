@@ -6,7 +6,9 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.dto.CuotaPagoRe
 import java.util.List;
 
 public interface CuotaPagoService {
-    void generarCronogramaCuotas(ComprobantePago comprobante, Integer numeroCuotas, Integer diasEntreCuotas);
+
+    // Cambiar 'ComprobantePago comprobante' por 'Long comprobanteId'
+    void generarCronogramaCuotas(Long comprobanteId, Integer numeroCuotas, Integer diasEntreCuotas);
 
     List<CuotaPagoResponse> listarPorComprobante(Long comprobanteId);
 

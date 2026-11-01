@@ -1,8 +1,10 @@
 package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model.ComprobantePago;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.dto.CuotaPagoResponse;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.service.CuotaPagoService;
 
@@ -24,5 +26,14 @@ public class CuotaPagoController {
     public ResponseEntity<Void> marcarComoPagada(@PathVariable Long cuotaId) {
         cuotaPagoService.marcarCuotaComoPagada(cuotaId);
         return ResponseEntity.noContent().build();
+    }
+    @PostMapping("/comprobante/{comprobanteId}/generar")
+    public ResponseEntity<Void> generarCronograma(
+            @PathVariable Long comprobanteId,
+            @RequestParam Integer numeroCuotas,
+            @RequestParam(defaultValue = "30") Integer diasEntreCuotas
+    ) {
+        cuotaPagoService.generarCronogramaCuotas(comprobanteId, numeroCuotas, diasEntreCuotas);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }
