@@ -6,13 +6,13 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.dto.Crea
 import java.util.List;
 
 public interface ComprobanteService {
+
     ComprobanteResponse emitir(CrearComprobanteRequest request);
 
     List<ComprobanteResponse> listarTodos();
 
     ComprobanteResponse buscarPorId(Long id);
 
-    ComprobanteResponse buscarPorSerieYNumero(String serie, String numero);
 
-    ComprobanteResponse anular(Long id, String motivo);
+
 }

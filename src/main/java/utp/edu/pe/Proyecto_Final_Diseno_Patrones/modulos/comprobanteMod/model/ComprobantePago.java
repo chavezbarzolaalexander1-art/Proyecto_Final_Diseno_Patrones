@@ -57,8 +57,8 @@ public abstract class ComprobantePago {
     @JoinColumn(name = "vendedor_id", nullable = false)
     private Vendedor vendedor;
 
-    @ManyToOne
-    @JoinColumn(name = "estado_id", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado", nullable = false, length = 20)
     private EstadoComprobante estado;
 
     @OneToMany(

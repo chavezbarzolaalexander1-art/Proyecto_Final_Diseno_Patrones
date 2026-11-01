@@ -22,35 +22,18 @@ import java.util.List;
 @RequiredArgsConstructor
 @Validated
 public class PagoController {
-
     private final PagoService pagoService;
 
-    /**
-     * Registra un pago sobre un comprobante. Medios soportados: EFECTIVO, TARJETA,
-     * TRANSFERENCIA y YAPE/PLIN (patrón Strategy).
-     * @param request Datos del pago.
-     * @return El pago registrado con su comisión y monto neto, HTTP 201 Created.
-     */
     @PostMapping
     public ResponseEntity<PagoResponse> registrarPago(@Valid @RequestBody RegistrarPagoRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(pagoService.registrarPago(request));
     }
 
-    /**
-     * Lista los pagos realizados para un comprobante.
-     * @param comprobanteId Identificador del comprobante.
-     * @return Lista de pagos con estado HTTP 200 OK.
-     */
     @GetMapping("/comprobante/{comprobanteId}")
     public ResponseEntity<List<PagoResponse>> listarPorComprobante(@PathVariable Long comprobanteId) {
         return ResponseEntity.ok(pagoService.listarPorComprobante(comprobanteId));
     }
 
-    /**
-     * Calcula el total pagado de un comprobante.
-     * @param comprobanteId Identificador del comprobante.
-     * @return Suma de los montos pagados con estado HTTP 200 OK.
-     */
     @GetMapping("/comprobante/{comprobanteId}/total")
     public ResponseEntity<Double> calcularTotalPagado(@PathVariable Long comprobanteId) {
         return ResponseEntity.ok(pagoService.calcularTotalPagado(comprobanteId));

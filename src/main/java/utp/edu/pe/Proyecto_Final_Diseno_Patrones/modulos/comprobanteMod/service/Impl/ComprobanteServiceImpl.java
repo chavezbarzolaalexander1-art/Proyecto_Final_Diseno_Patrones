@@ -9,11 +9,8 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.model.Vended
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.dto.*;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.factory.ComprobanteFactory;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model.*;
-import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.repository.AnulacionComprobanteRepository;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.repository.ComprobantePagoRepository;
-import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.repository.EstadoComprobanteRepository;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.service.ComprobanteService;
-import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.model.AnulacionComprobante;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.model.Producto;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.repository.ProductoRepository;
 
@@ -26,12 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ComprobanteServiceImpl implements ComprobanteService {
 
-    private static final String ESTADO_EMITIDO = "EMITIDO";
-    private static final String ESTADO_ANULADO = "ANULADO";
-
     private final ComprobantePagoRepository comprobanteRepository;
-    private final EstadoComprobanteRepository estadoRepository;
-    private final AnulacionComprobanteRepository anulacionRepository;
     private final ProductoRepository productoRepository;
     private final ComprobanteFactory comprobanteFactory;
     private final EntityManager entityManager;
@@ -50,7 +42,6 @@ public class ComprobanteServiceImpl implements ComprobanteService {
 
         Cliente cliente = buscarEntidad(Cliente.class, request.clienteId(), "cliente");
         Vendedor vendedor = buscarEntidad(Vendedor.class, request.vendedorId(), "vendedor");
-        EstadoComprobante estadoEmitido = obtenerOCrearEstado(ESTADO_EMITIDO);
 
         ComprobantePago comprobante = comprobanteFactory.crear(request);
         comprobante.setSerie(serie);
@@ -58,7 +49,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         comprobante.setFechaEmision(LocalDateTime.now());
         comprobante.setCliente(cliente);
         comprobante.setVendedor(vendedor);
-        comprobante.setEstado(estadoEmitido);
+        comprobante.setEstado(EstadoComprobante.EMITIDO);
 
         BigDecimal subtotalGeneral = BigDecimal.ZERO;
         BigDecimal igvGeneral = BigDecimal.ZERO;
@@ -81,10 +72,10 @@ public class ComprobanteServiceImpl implements ComprobanteService {
                     .multiply(BigDecimal.valueOf(detalleRequest.cantidad()))
                     .setScale(2, RoundingMode.HALF_UP);
 
-            BigDecimal porcentajeImpuesto = producto.getImpuesto() == null
-                    || producto.getImpuesto().getPorcentaje() == null
+            BigDecimal porcentajeImpuesto = (producto.getImpuesto() == null || producto.getImpuesto().getPorcentaje() == null)
                     ? BigDecimal.ZERO
                     : BigDecimal.valueOf(producto.getImpuesto().getPorcentaje());
+
             BigDecimal igvDetalle = subtotalDetalle
                     .multiply(porcentajeImpuesto)
                     .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
@@ -121,60 +112,11 @@ public class ComprobanteServiceImpl implements ComprobanteService {
     @Override
     @Transactional(readOnly = true)
     public ComprobanteResponse buscarPorId(Long id) {
-        return convertirRespuesta(obtenerComprobante(id));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public ComprobanteResponse buscarPorSerieYNumero(String serie, String numero) {
-        ComprobantePago comprobante = comprobanteRepository
-                .findBySerieAndNumero(
-                        serie.trim().toUpperCase(),
-                        completarNumero(numero)
-                )
-                .orElseThrow(() -> new RuntimeException("No se encontró el comprobante solicitado"));
-        return convertirRespuesta(comprobante);
-    }
-
-    @Override
-    @Transactional
-    public ComprobanteResponse anular(Long id, String motivo) {
-        if (motivo == null || motivo.isBlank()) {
-            throw new IllegalArgumentException("El motivo de anulación es obligatorio");
-        }
-        if (motivo.trim().length() > 255) {
-            throw new IllegalArgumentException("El motivo no puede superar 255 caracteres");
-        }
-
-        ComprobantePago comprobante = obtenerComprobante(id);
-        if (ESTADO_ANULADO.equalsIgnoreCase(comprobante.getEstado().getNombre())
-                || anulacionRepository.existsByComprobantePagoId(id)) {
-            throw new IllegalArgumentException("El comprobante ya se encuentra anulado");
-        }
-
-        comprobante.setEstado(obtenerOCrearEstado(ESTADO_ANULADO));
-        AnulacionComprobante anulacion = AnulacionComprobante.builder()
-                .motivo(motivo.trim())
-                .fechaAnulacion(LocalDateTime.now())
-                .comprobantePago(comprobante)
-                .build();
-        anulacionRepository.save(anulacion);
-
-        return convertirRespuesta(comprobanteRepository.save(comprobante));
-    }
-
-    private ComprobantePago obtenerComprobante(Long id) {
-        return comprobanteRepository.findById(id)
+        ComprobantePago comprobante = comprobanteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException(
                         "No se encontró el comprobante con ID: " + id
                 ));
-    }
-
-    private EstadoComprobante obtenerOCrearEstado(String nombre) {
-        return estadoRepository.findByNombreIgnoreCase(nombre)
-                .orElseGet(() -> estadoRepository.save(
-                        EstadoComprobante.builder().nombre(nombre).build()
-                ));
+        return convertirRespuesta(comprobante);
     }
 
     private <T> T buscarEntidad(Class<T> tipo, Long id, String nombre) {
@@ -234,7 +176,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
                 comprobante.getVendedor().getId(),
                 comprobante.getVendedor().getNombres() + " "
                         + comprobante.getVendedor().getApellidos(),
-                comprobante.getEstado().getNombre(),
+                comprobante.getEstado().name(),
                 observaciones,
                 ordenCompra,
                 guiaRemision,
