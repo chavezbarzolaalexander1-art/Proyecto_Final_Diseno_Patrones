@@ -11,5 +11,4 @@ public interface CuotaPagoRepository extends JpaRepository<CuotaPago, Long> {
 
     List<CuotaPago> findByComprobantePagoIdOrderByNumeroCuotaAsc(Long comprobanteId);
 
-    List<CuotaPago> findByComprobantePagoIdAndPagadoFalse(Long comprobanteId);
 }

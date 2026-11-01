@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model.ComprobantePago;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.repository.ComprobantePagoRepository;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.dto.CuotaPagoResponse;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.model.CuotaPago;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.repository.CuotaPagoRepository;
@@ -17,14 +18,19 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class CuotaPagoServiceImpl implements CuotaPagoService {
+    private final ComprobantePagoRepository comprobantePagoRepository;
     private final CuotaPagoRepository cuotaPagoRepository;
 
     @Override
     @Transactional
-    public void generarCronogramaCuotas(ComprobantePago comprobante, Integer numeroCuotas, Integer diasEntreCuotas) {
+    public void generarCronogramaCuotas(Long comprobanteId, Integer numeroCuotas, Integer diasEntreCuotas) {
         if (numeroCuotas == null || numeroCuotas <= 1) {
             return;
         }
+
+        // Se busca el comprobante dentro del servicio usando el ID
+        ComprobantePago comprobante = comprobantePagoRepository.findById(comprobanteId)
+                .orElseThrow(() -> new RuntimeException("No se encontró el comprobante con ID: " + comprobanteId));
 
         int dias = (diasEntreCuotas != null && diasEntreCuotas > 0) ? diasEntreCuotas : 30;
         BigDecimal montoCuota = comprobante.getTotal()
@@ -41,7 +47,6 @@ public class CuotaPagoServiceImpl implements CuotaPagoService {
             cuotaPagoRepository.save(cuota);
         }
     }
-
     @Override
     @Transactional(readOnly = true)
     public List<CuotaPagoResponse> listarPorComprobante(Long comprobanteId) {

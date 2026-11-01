@@ -11,8 +11,11 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.factory.
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model.*;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.repository.ComprobantePagoRepository;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.service.ComprobanteService;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.model.CondicionPago;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.model.Producto;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.model.StockInventario;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.repository.ProductoRepository;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.repository.StockInventarioRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -26,6 +29,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
     private final ComprobantePagoRepository comprobanteRepository;
     private final ProductoRepository productoRepository;
     private final ComprobanteFactory comprobanteFactory;
+    private final StockInventarioRepository stockInventarioRepository;
     private final EntityManager entityManager;
 
     @Override
@@ -51,6 +55,12 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         comprobante.setVendedor(vendedor);
         comprobante.setEstado(EstadoComprobante.EMITIDO);
 
+        // Integración con CondicionPago
+        if (request.condicionPagoId() != null) {
+            CondicionPago condicion = buscarEntidad(CondicionPago.class, request.condicionPagoId(), "condición de pago");
+            comprobante.setCondicionPago(condicion);
+        }
+
         BigDecimal subtotalGeneral = BigDecimal.ZERO;
         BigDecimal igvGeneral = BigDecimal.ZERO;
 
@@ -66,6 +76,24 @@ public class ComprobanteServiceImpl implements ComprobanteService {
                 );
             }
 
+            // Descuento y validación de stock
+            StockInventario stock = stockInventarioRepository.findByProductoId(producto.getId())
+                    .orElseThrow(() -> new RuntimeException(
+                            "No se encontró registro de stock para el producto ID: " + producto.getId()
+                    ));
+
+            if (stock.getCantidadDisponible() < detalleRequest.cantidad()) {
+                throw new IllegalArgumentException(
+                        "Stock insuficiente para el producto " + producto.getCodigo()
+                                + ". Disponible: " + stock.getCantidadDisponible()
+                );
+            }
+
+            stock.setCantidadDisponible(stock.getCantidadDisponible() - detalleRequest.cantidad());
+            stock.setUltimaActualizacion(LocalDateTime.now());
+            stockInventarioRepository.save(stock);
+
+            // Cálculo de precios e IGV por ítem
             BigDecimal precioUnitario = BigDecimal.valueOf(producto.getPrecioUnitario())
                     .setScale(2, RoundingMode.HALF_UP);
             BigDecimal subtotalDetalle = precioUnitario
@@ -100,7 +128,6 @@ public class ComprobanteServiceImpl implements ComprobanteService {
 
         return convertirRespuesta(comprobanteRepository.save(comprobante));
     }
-
     @Override
     @Transactional(readOnly = true)
     public List<ComprobanteResponse> listarTodos() {

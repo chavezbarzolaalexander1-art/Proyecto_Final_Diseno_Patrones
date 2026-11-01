@@ -33,4 +33,10 @@ public class Pago {
     @ManyToOne
     @JoinColumn(name = "metodo_pago_id", nullable = false)
     private MetodoPago metodoPago;
+
+    @Column
+    private Double comision;
+
+    @Column
+    private Double montoNeto;
 }

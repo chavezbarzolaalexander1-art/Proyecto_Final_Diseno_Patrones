@@ -17,6 +17,8 @@ public class EstadoEmitidoState implements  EstadoComprobanteState{
         BigDecimal pagado = BigDecimal.valueOf(totalPagadoAcumulado);
         if (pagado.compareTo(comprobante.getTotal()) >= 0) {
             comprobante.setEstado(EstadoComprobante.PAGADO);
+        } else if (pagado.compareTo(BigDecimal.ZERO) > 0) {
+            comprobante.setEstado(EstadoComprobante.PENDIENTE);
         }
     }
 

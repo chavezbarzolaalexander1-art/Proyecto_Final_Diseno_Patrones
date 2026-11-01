@@ -28,6 +28,8 @@ public record CrearComprobanteRequest(
         @NotNull(message = "El vendedor es obligatorio")
         Long vendedorId,
 
+        Long condicionPagoId,
+
         @NotEmpty(message = "El comprobante debe contener al menos un detalle")
         List<@Valid DetalleComprobanteRequest> detalles,
 
