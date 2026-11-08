@@ -12,10 +12,10 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model.*;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.repository.ComprobantePagoRepository;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.service.ComprobanteService;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.model.CondicionPago;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.model.EstadoPago;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.model.Producto;
-import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.model.StockInventario;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.repository.ProductoRepository;
-import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.repository.StockInventarioRepository;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.service.StockInventarioService;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -25,11 +25,10 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ComprobanteServiceImpl implements ComprobanteService {
-
     private final ComprobantePagoRepository comprobanteRepository;
     private final ProductoRepository productoRepository;
     private final ComprobanteFactory comprobanteFactory;
-    private final StockInventarioRepository stockInventarioRepository;
+    private final StockInventarioService stockInventarioService;
     private final EntityManager entityManager;
 
     @Override
@@ -53,105 +52,78 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         comprobante.setFechaEmision(LocalDateTime.now());
         comprobante.setCliente(cliente);
         comprobante.setVendedor(vendedor);
-        comprobante.setEstado(EstadoComprobante.EMITIDO);
+        comprobante.setEstadoComprobante(EstadoComprobante.EMITIDO);
+        comprobante.setEstadoPago(EstadoPago.PENDIENTE);
 
-        // Integración con CondicionPago
         if (request.condicionPagoId() != null) {
             CondicionPago condicion = buscarEntidad(CondicionPago.class, request.condicionPagoId(), "condición de pago");
             comprobante.setCondicionPago(condicion);
         }
 
+        procesarDetallesYTotales(comprobante, request.detalles());
+
+        return convertirRespuesta(comprobanteRepository.save(comprobante));
+    }
+
+    private void procesarDetallesYTotales(ComprobantePago comprobante, List<DetalleComprobanteRequest> detallesRequest) {
         BigDecimal subtotalGeneral = BigDecimal.ZERO;
         BigDecimal igvGeneral = BigDecimal.ZERO;
 
-        for (DetalleComprobanteRequest detalleRequest : request.detalles()) {
-            Producto producto = productoRepository.findById(detalleRequest.productoId())
-                    .orElseThrow(() -> new RuntimeException(
-                            "No se encontró el producto con ID: " + detalleRequest.productoId()
-                    ));
+        for (DetalleComprobanteRequest item : detallesRequest) {
+            Producto producto = productoRepository.findById(item.productoId())
+                    .orElseThrow(() -> new RuntimeException("No se encontró el producto con ID: " + item.productoId()));
 
             if (producto.getPrecioUnitario() == null || producto.getPrecioUnitario() < 0) {
-                throw new IllegalArgumentException(
-                        "El producto " + producto.getCodigo() + " no tiene un precio válido"
-                );
+                throw new IllegalArgumentException("El producto " + producto.getCodigo() + " no tiene un precio válido");
             }
 
-            // Descuento y validación de stock
-            StockInventario stock = stockInventarioRepository.findByProductoId(producto.getId())
-                    .orElseThrow(() -> new RuntimeException(
-                            "No se encontró registro de stock para el producto ID: " + producto.getId()
-                    ));
+            // Delegación del descuento de inventario
+            stockInventarioService.descontarStock(producto.getId(), item.cantidad());
 
-            if (stock.getCantidadDisponible() < detalleRequest.cantidad()) {
-                throw new IllegalArgumentException(
-                        "Stock insuficiente para el producto " + producto.getCodigo()
-                                + ". Disponible: " + stock.getCantidadDisponible()
-                );
-            }
-
-            stock.setCantidadDisponible(stock.getCantidadDisponible() - detalleRequest.cantidad());
-            stock.setUltimaActualizacion(LocalDateTime.now());
-            stockInventarioRepository.save(stock);
-
-            // Cálculo de precios e IGV por ítem
-            BigDecimal precioUnitario = BigDecimal.valueOf(producto.getPrecioUnitario())
-                    .setScale(2, RoundingMode.HALF_UP);
-            BigDecimal subtotalDetalle = precioUnitario
-                    .multiply(BigDecimal.valueOf(detalleRequest.cantidad()))
-                    .setScale(2, RoundingMode.HALF_UP);
+            BigDecimal precioUnitario = BigDecimal.valueOf(producto.getPrecioUnitario()).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal subtotalDetalle = precioUnitario.multiply(BigDecimal.valueOf(item.cantidad())).setScale(2, RoundingMode.HALF_UP);
 
             BigDecimal porcentajeImpuesto = (producto.getImpuesto() == null || producto.getImpuesto().getPorcentaje() == null)
                     ? BigDecimal.ZERO
                     : BigDecimal.valueOf(producto.getImpuesto().getPorcentaje());
 
-            BigDecimal igvDetalle = subtotalDetalle
-                    .multiply(porcentajeImpuesto)
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            BigDecimal igvDetalle = subtotalDetalle.multiply(porcentajeImpuesto).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
             DetalleComprobante detalle = DetalleComprobante.builder()
                     .producto(producto)
-                    .cantidad(detalleRequest.cantidad())
+                    .cantidad(item.cantidad())
                     .precioUnitario(precioUnitario)
                     .subtotal(subtotalDetalle)
                     .build();
-            comprobante.agregarDetalle(detalle);
 
+            comprobante.agregarDetalle(detalle);
             subtotalGeneral = subtotalGeneral.add(subtotalDetalle);
             igvGeneral = igvGeneral.add(igvDetalle);
         }
 
         comprobante.setSubtotal(subtotalGeneral.setScale(2, RoundingMode.HALF_UP));
         comprobante.setIgv(igvGeneral.setScale(2, RoundingMode.HALF_UP));
-        comprobante.setTotal(
-                subtotalGeneral.add(igvGeneral).setScale(2, RoundingMode.HALF_UP)
-        );
-
-        return convertirRespuesta(comprobanteRepository.save(comprobante));
+        comprobante.setTotal(subtotalGeneral.add(igvGeneral).setScale(2, RoundingMode.HALF_UP));
     }
+
     @Override
     @Transactional(readOnly = true)
     public List<ComprobanteResponse> listarTodos() {
-        return comprobanteRepository.findAll().stream()
-                .map(this::convertirRespuesta)
-                .toList();
+        return comprobanteRepository.findAll().stream().map(this::convertirRespuesta).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public ComprobanteResponse buscarPorId(Long id) {
         ComprobantePago comprobante = comprobanteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(
-                        "No se encontró el comprobante con ID: " + id
-                ));
+                .orElseThrow(() -> new RuntimeException("No se encontró el comprobante con ID: " + id));
         return convertirRespuesta(comprobante);
     }
 
     private <T> T buscarEntidad(Class<T> tipo, Long id, String nombre) {
         T entidad = entityManager.find(tipo, id);
         if (entidad == null) {
-            throw new RuntimeException(
-                    "No se encontró el " + nombre + " con ID: " + id
-            );
+            throw new RuntimeException("No se encontró el " + nombre + " con ID: " + id);
         }
         return entidad;
     }
@@ -201,9 +173,9 @@ public class ComprobanteServiceImpl implements ComprobanteService {
                 comprobante.getCliente().getId(),
                 comprobante.getCliente().getRazonSocialONombre(),
                 comprobante.getVendedor().getId(),
-                comprobante.getVendedor().getNombres() + " "
-                        + comprobante.getVendedor().getApellidos(),
-                comprobante.getEstado().name(),
+                comprobante.getVendedor().getNombres() + " " + comprobante.getVendedor().getApellidos(),
+                comprobante.getEstadoComprobante().name(),
+                comprobante.getEstadoPago().name(),
                 observaciones,
                 ordenCompra,
                 guiaRemision,

@@ -58,4 +58,34 @@ public class StockInventarioServiceImpl implements StockInventarioService {
     public List<StockInventario> listarProductosConStockBajo() {
         return stockInventarioRepository.findProductosConStockBajo();
     }
+    @Override
+    @Transactional
+    public void descontarStock(Long productoId, Integer cantidad) {
+        StockInventario stock = obtenerStockOError(productoId);
+
+        if (stock.getCantidadDisponible() < cantidad) {
+            throw new IllegalArgumentException(
+                    "Stock insuficiente para el producto ID: " + productoId
+                            + ". Disponible: " + stock.getCantidadDisponible()
+            );
+        }
+
+        stock.setCantidadDisponible(stock.getCantidadDisponible() - cantidad);
+        stock.setUltimaActualizacion(LocalDateTime.now());
+        stockInventarioRepository.save(stock);
+    }
+
+    @Override
+    @Transactional
+    public void restaurarStock(Long productoId, Integer cantidad) {
+        StockInventario stock = obtenerStockOError(productoId);
+        stock.setCantidadDisponible(stock.getCantidadDisponible() + cantidad);
+        stock.setUltimaActualizacion(LocalDateTime.now());
+        stockInventarioRepository.save(stock);
+    }
+
+    private StockInventario obtenerStockOError(Long productoId) {
+        return stockInventarioRepository.findByProductoId(productoId)
+                .orElseThrow(() -> new RuntimeException("No se encontró stock para el producto ID: " + productoId));
+    }
 }

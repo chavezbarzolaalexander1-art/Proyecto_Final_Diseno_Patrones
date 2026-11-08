@@ -8,13 +8,11 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model.Es
 @RequiredArgsConstructor
 public class ContextoEstadoComprobante {
     private final EstadoEmitidoState estadoEmitidoState;
-    private final EstadoPagadoState estadoPagadoState;
     private final EstadoAnuladoState estadoAnuladoState;
 
     public EstadoComprobanteState obtenerEstado(EstadoComprobante estado) {
         return switch (estado) {
-            case EMITIDO, PENDIENTE -> estadoEmitidoState;
-            case PAGADO -> estadoPagadoState;
+            case EMITIDO -> estadoEmitidoState;
             case ANULADO -> estadoAnuladoState;
         };
     }

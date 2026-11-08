@@ -11,4 +11,8 @@ public interface StockInventarioService {
     StockInventario actualizarCantidadStock(Long productoId, Integer nuevaCantidad);
 
     List<StockInventario> listarProductosConStockBajo();
+
+    // Métodos delegados para emisión y anulación
+    void descontarStock(Long productoId, Integer cantidad);
+    void restaurarStock(Long productoId, Integer cantidad);
 }

@@ -12,7 +12,7 @@ public class EstadoAnuladoState implements EstadoComprobanteState {
 
     @Override
     public void evaluarSiguienteEstadoTrasPago(ComprobantePago comprobante, double totalPagadoAcumulado) {
-        // Sin cambios.
+        // Sin cambios sobre un comprobante anulado
     }
 
     @Override

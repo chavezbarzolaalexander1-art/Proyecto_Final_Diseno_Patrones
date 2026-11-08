@@ -6,9 +6,11 @@ import org.springframework.transaction.annotation.Transactional;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model.ComprobantePago;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.repository.ComprobantePagoRepository;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.dto.CuotaPagoResponse;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.dto.RegistrarPagoRequest;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.model.CuotaPago;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.repository.CuotaPagoRepository;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.service.CuotaPagoService;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.service.PagoService;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -20,6 +22,7 @@ import java.util.List;
 public class CuotaPagoServiceImpl implements CuotaPagoService {
     private final ComprobantePagoRepository comprobantePagoRepository;
     private final CuotaPagoRepository cuotaPagoRepository;
+    private final PagoService pagoService;
 
     @Override
     @Transactional
@@ -60,13 +63,28 @@ public class CuotaPagoServiceImpl implements CuotaPagoService {
                 ))
                 .toList();
     }
-
     @Override
     @Transactional
-    public void marcarCuotaComoPagada(Long cuotaId) {
+    public void marcarCuotaComoPagada(Long cuotaId, String metodoPago, String numeroTransaccion) {
         CuotaPago cuota = cuotaPagoRepository.findById(cuotaId)
                 .orElseThrow(() -> new RuntimeException("No se encontró la cuota con ID: " + cuotaId));
+
+        if (Boolean.TRUE.equals(cuota.getPagado())) {
+            throw new IllegalArgumentException("La cuota ya se encuentra pagada.");
+        }
+
+        // 1. Marcar estado de cuota en el cronograma
         cuota.setPagado(true);
         cuotaPagoRepository.save(cuota);
+
+        // 2. Registrar la entrada de dinero en el módulo de pagos (dispara el patrón State)
+        RegistrarPagoRequest pagoRequest = new RegistrarPagoRequest(
+                cuota.getComprobantePago().getId(),
+                metodoPago,
+                cuota.getMonto(),
+                numeroTransaccion
+        );
+
+        pagoService.registrarPago(pagoRequest);
     }
 }
