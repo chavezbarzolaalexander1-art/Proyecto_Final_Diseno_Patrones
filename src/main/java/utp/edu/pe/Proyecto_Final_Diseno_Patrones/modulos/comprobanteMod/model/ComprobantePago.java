@@ -7,6 +7,7 @@ import lombok.Setter;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.model.Cliente;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.model.Vendedor;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.model.CondicionPago;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.model.EstadoPago;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -25,7 +26,6 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-
 public abstract class ComprobantePago {
 
     @Id
@@ -60,7 +60,11 @@ public abstract class ComprobantePago {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false, length = 20)
-    private EstadoComprobante estado;
+    private EstadoComprobante EstadoComprobante;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_pago", nullable = false, length = 20)
+    private EstadoPago estadoPago;
 
     @ManyToOne
     @JoinColumn(name = "condicion_pago_id")

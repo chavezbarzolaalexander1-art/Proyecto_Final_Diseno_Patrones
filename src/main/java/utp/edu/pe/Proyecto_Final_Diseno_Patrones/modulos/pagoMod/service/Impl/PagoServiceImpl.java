@@ -16,6 +16,9 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.state.ContextoE
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.state.EstadoComprobanteState;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.strategy.ProcesadorPago;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.strategy.ResultadoPago;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -32,18 +35,17 @@ public class PagoServiceImpl implements PagoService {
     private final ComprobantePagoRepository comprobanteRepository;
     private final ProcesadorPago procesadorPago;
     private final ContextoEstadoComprobante contextoEstado;
-
     @Override
     @Transactional
     public PagoResponse registrarPago(RegistrarPagoRequest request) {
         ComprobantePago comprobante = comprobanteRepository.findById(request.comprobanteId())
                 .orElseThrow(() -> new RuntimeException("No se encontró el comprobante con ID: " + request.comprobanteId()));
 
-        // 1. Validar reglas según estado actual (Patrón State)
-        EstadoComprobanteState estadoActual = contextoEstado.obtenerEstado(comprobante.getEstado());
+        // 1. Validar según el estado fiscal actual (EMITIDO o ANULADO) y financiero (PAGADO)
+        EstadoComprobanteState estadoActual = contextoEstado.obtenerEstado(comprobante.getEstadoComprobante());
         estadoActual.validarPermitePago(comprobante);
 
-        // 2. Crear la entidad Pago base (sin comisión ni montoNeto aún)
+        // 2. Crear la entidad Pago
         Pago pago = Pago.builder()
                 .monto(request.monto())
                 .fechaPago(LocalDateTime.now())
@@ -52,17 +54,15 @@ public class PagoServiceImpl implements PagoService {
                 .metodoPago(obtenerOCrearMetodo(request.metodoPago()))
                 .build();
 
-        // 3. Procesar el pago con Strategy (obtiene la comisión y el monto neto)
+        // 3. Procesar el pago con el patrón Strategy
         ResultadoPago resultado = procesadorPago.procesar(pago);
-
-        // 4. Asignar la comisión y monto neto calculados a la entidad
         pago.setComision(resultado.comision());
         pago.setMontoNeto(resultado.montoNeto());
 
-        // 5. Guardar en base de datos
+        // 4. Guardar pago en BD
         Pago guardado = pagoRepository.save(pago);
 
-        // 6. Evaluar si cambia a PAGADO tras acumular este abono (Patrón State)
+        // 5. Evaluar si cambia estadoPago de PENDIENTE a PAGADO
         double totalPagado = calcularTotalPagado(comprobante.getId());
         estadoActual.evaluarSiguienteEstadoTrasPago(comprobante, totalPagado);
         comprobanteRepository.save(comprobante);
@@ -78,6 +78,7 @@ public class PagoServiceImpl implements PagoService {
                 guardado.getFechaPago()
         );
     }
+
     @Override
     @Transactional(readOnly = true)
     public List<PagoResponse> listarPorComprobante(Long comprobanteId) {
@@ -98,9 +99,12 @@ public class PagoServiceImpl implements PagoService {
     @Override
     @Transactional(readOnly = true)
     public Double calcularTotalPagado(Long comprobanteId) {
-        return pagoRepository.findByComprobantePagoId(comprobanteId).stream()
-                .mapToDouble(Pago::getMonto)
-                .sum();
+        BigDecimal total = pagoRepository.findByComprobantePagoId(comprobanteId).stream()
+                .map(p -> BigDecimal.valueOf(p.getMonto()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        return total.doubleValue();
     }
 
     private MetodoPago obtenerOCrearMetodo(String nombre) {

@@ -16,6 +16,6 @@ public class EstadoPagadoState implements EstadoComprobanteState{
 
     @Override
     public void validarPermiteAnulacion(ComprobantePago comprobante) {
-        throw new IllegalArgumentException("No se puede anular un comprobante que ya fue PAGADO.");
+        // Permitido anular comprobantes (pendientes o pagados)
     }
 }

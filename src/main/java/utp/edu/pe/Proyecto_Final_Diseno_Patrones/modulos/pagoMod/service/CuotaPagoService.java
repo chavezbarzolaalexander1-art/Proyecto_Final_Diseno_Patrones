@@ -12,5 +12,5 @@ public interface CuotaPagoService {
 
     List<CuotaPagoResponse> listarPorComprobante(Long comprobanteId);
 
-    void marcarCuotaComoPagada(Long cuotaId);
+    void marcarCuotaComoPagada(Long cuotaId, String metodoPago, String numeroTransaccion);
 }

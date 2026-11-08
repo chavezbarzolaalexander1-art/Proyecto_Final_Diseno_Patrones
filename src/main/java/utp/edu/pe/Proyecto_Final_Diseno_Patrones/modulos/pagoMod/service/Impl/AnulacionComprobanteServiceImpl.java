@@ -15,6 +15,7 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.state.ContextoE
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.state.EstadoComprobanteState;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.model.StockInventario;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.repository.StockInventarioRepository;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.service.StockInventarioService;
 
 import java.time.LocalDateTime;
 
@@ -23,7 +24,7 @@ import java.time.LocalDateTime;
 public class AnulacionComprobanteServiceImpl implements AnulacionComprobanteService {
     private final ComprobantePagoRepository comprobanteRepository;
     private final AnulacionComprobanteRepository anulacionRepository;
-    private final StockInventarioRepository stockInventarioRepository;
+    private final StockInventarioService stockInventarioService;
     private final ContextoEstadoComprobante contextoEstado;
 
     @Override
@@ -32,21 +33,16 @@ public class AnulacionComprobanteServiceImpl implements AnulacionComprobanteServ
         ComprobantePago comprobante = comprobanteRepository.findById(comprobanteId)
                 .orElseThrow(() -> new RuntimeException("No se encontró el comprobante con ID: " + comprobanteId));
 
-        // 1. Validar si el comprobante permite ser anulado según su estado actual (Patrón State)
-        EstadoComprobanteState estadoActual = contextoEstado.obtenerEstado(comprobante.getEstado());
+        // 1. Validar anulación mediante el patrón State
+        EstadoComprobanteState estadoActual = contextoEstado.obtenerEstado(comprobante.getEstadoComprobante());
         estadoActual.validarPermiteAnulacion(comprobante);
 
-        // 2. Reversión de stock en inventario por cada ítem del comprobante
+        // 2. Reversión de inventario delegada al módulo de productos
         for (DetalleComprobante detalle : comprobante.getDetalles()) {
-            StockInventario stock = stockInventarioRepository.findByProductoId(detalle.getProducto().getId())
-                    .orElseThrow(() -> new RuntimeException("No se encontró stock registrado para el producto ID: " + detalle.getProducto().getId()));
-
-            stock.setCantidadDisponible(stock.getCantidadDisponible() + detalle.getCantidad());
-            stock.setUltimaActualizacion(LocalDateTime.now());
-            stockInventarioRepository.save(stock);
+            stockInventarioService.restaurarStock(detalle.getProducto().getId(), detalle.getCantidad());
         }
 
-        // 3. Registrar auditoría y motivo de anulación
+        // 3. Registrar auditoría de la anulación
         AnulacionComprobante anulacion = AnulacionComprobante.builder()
                 .motivo(request.motivo().trim())
                 .fechaAnulacion(LocalDateTime.now())
@@ -54,8 +50,8 @@ public class AnulacionComprobanteServiceImpl implements AnulacionComprobanteServ
                 .build();
         anulacionRepository.save(anulacion);
 
-        // 4. Actualizar estado del comprobante a ANULADO
-        comprobante.setEstado(EstadoComprobante.ANULADO);
+        // 4. Cambiar estado fiscal a ANULADO
+        comprobante.setEstadoComprobante(EstadoComprobante.ANULADO);
         comprobanteRepository.save(comprobante);
     }
 }

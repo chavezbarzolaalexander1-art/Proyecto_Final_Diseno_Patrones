@@ -23,10 +23,15 @@ public class CuotaPagoController {
     }
 
     @PatchMapping("/{cuotaId}/pagar")
-    public ResponseEntity<Void> marcarComoPagada(@PathVariable Long cuotaId) {
-        cuotaPagoService.marcarCuotaComoPagada(cuotaId);
+    public ResponseEntity<Void> marcarComoPagada(
+            @PathVariable Long cuotaId,
+            @RequestParam String metodoPago,
+            @RequestParam(required = false) String numeroTransaccion
+    ) {
+        cuotaPagoService.marcarCuotaComoPagada(cuotaId, metodoPago, numeroTransaccion);
         return ResponseEntity.noContent().build();
     }
+
     @PostMapping("/comprobante/{comprobanteId}/generar")
     public ResponseEntity<Void> generarCronograma(
             @PathVariable Long comprobanteId,
