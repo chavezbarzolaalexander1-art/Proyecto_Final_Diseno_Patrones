@@ -176,6 +176,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
                 comprobante.getVendedor().getNombres() + " " + comprobante.getVendedor().getApellidos(),
                 comprobante.getEstadoComprobante().name(),
                 comprobante.getEstadoPago().name(),
+                comprobante.getCondicionPago(),
                 observaciones,
                 ordenCompra,
                 guiaRemision,
