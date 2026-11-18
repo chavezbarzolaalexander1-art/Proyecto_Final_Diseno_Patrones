@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -145,25 +146,12 @@ public class ComprobanteServiceImpl implements ComprobanteService {
                 ))
                 .toList();
 
-        TipoComprobante tipo;
-        String observaciones = null;
-        String ordenCompra = null;
-        String guiaRemision = null;
-
-        if (comprobante instanceof Boleta boleta) {
-            tipo = TipoComprobante.BOLETA;
-            observaciones = boleta.getObservaciones();
-        } else if (comprobante instanceof Factura factura) {
-            tipo = TipoComprobante.FACTURA;
-            ordenCompra = factura.getOrdenCompra();
-            guiaRemision = factura.getGuiaRemision();
-        } else {
-            throw new IllegalStateException("Tipo de comprobante no soportado");
-        }
+       //la propia entidad sabe su tipo y sus datos específicos
+        Map<String, String> datosExtra = comprobante.getDatosAdicionalesDocumento();
 
         return new ComprobanteResponse(
                 comprobante.getId(),
-                tipo,
+                comprobante.getTipoComprobante(),
                 comprobante.getSerie(),
                 comprobante.getNumero(),
                 comprobante.getFechaEmision(),
@@ -177,9 +165,9 @@ public class ComprobanteServiceImpl implements ComprobanteService {
                 comprobante.getEstadoComprobante().name(),
                 comprobante.getEstadoPago().name(),
                 comprobante.getCondicionPago(),
-                observaciones,
-                ordenCompra,
-                guiaRemision,
+                datosExtra.get("Observaciones"),
+                datosExtra.get("Orden de Compra"),
+                datosExtra.get("Guía de Remisión"),
                 detalles
         );
     }

@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(
@@ -81,5 +82,8 @@ public abstract class ComprobantePago {
         detalles.add(detalle);
         detalle.setComprobantePago(this);
     }
+    public abstract TipoComprobante getTipoComprobante();
+    public abstract String getTituloDocumento();
+    public abstract Map<String, String> getDatosAdicionalesDocumento();
 }
 
