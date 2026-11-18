@@ -1,18 +1,12 @@
 package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.service;
-
-import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.model.Categoria;
-
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.dto.CategoriaRequest;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.dto.CategoriaResponse;
 import java.util.List;
-import java.util.Optional;
 
 public interface CategoriaService {
-    Categoria registrarCategoria(Categoria categoria);
-
-    List<Categoria> listarTodas();
-
-    Optional<Categoria> buscarPorId(Long id);
-
-    Categoria actualizarCategoria(Long id, Categoria categoriaDetalles);
-
+    CategoriaResponse registrarCategoria(CategoriaRequest request);
+    List<CategoriaResponse> listarTodas();
+    CategoriaResponse buscarPorId(Long id);
+    CategoriaResponse actualizarCategoria(Long id, CategoriaRequest request);
     void eliminarCategoria(Long id);
 }

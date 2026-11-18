@@ -3,18 +3,22 @@ package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.service.Im
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.dto.StockInventarioResponse;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.mapper.ProductoMapper;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.model.StockInventario;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.repository.StockInventarioRepository;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.service.StockInventarioService;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class StockInventarioServiceImpl implements StockInventarioService {
+    private static final ZoneId ZONA_LIMA = ZoneId.of("America/Lima");
     private final StockInventarioRepository stockInventarioRepository;
+    private final ProductoMapper productoMapper;
 
     /**
      * Busca el registro de stock asociado a un producto mediante su ID.
@@ -24,8 +28,8 @@ public class StockInventarioServiceImpl implements StockInventarioService {
      */
     @Override
     @Transactional(readOnly = true)
-    public Optional<StockInventario> buscarPorProductoId(Long productoId) {
-        return stockInventarioRepository.findByProductoId(productoId);
+    public StockInventarioResponse buscarPorProductoId(Long productoId) {
+        return productoMapper.toStockResponse(obtenerStockOError(productoId));
     }
 
     /**
@@ -37,16 +41,16 @@ public class StockInventarioServiceImpl implements StockInventarioService {
      */
     @Override
     @Transactional
-    public StockInventario actualizarCantidadStock(Long productoId, Integer nuevaCantidad) {
-        // 1. Buscar el stock vinculado al producto
-        StockInventario stock = stockInventarioRepository.findByProductoId(productoId)
-                .orElseThrow(() -> new RuntimeException("No se encontró registro de stock para el producto ID: " + productoId));
-
-        // 2. Asignar la cantidad y actualizar la estampa de tiempo
+    public StockInventarioResponse actualizarCantidadStock(Long productoId, Integer nuevaCantidad) {
+        if (nuevaCantidad == null || nuevaCantidad < 0) {
+            throw new IllegalArgumentException("La nueva cantidad de stock no puede ser negativa.");
+        }
+        StockInventario stock = obtenerStockOError(productoId);
         stock.setCantidadDisponible(nuevaCantidad);
-        stock.setUltimaActualizacion(LocalDateTime.now());
+        stock.setUltimaActualizacion(LocalDateTime.now(ZONA_LIMA)
+        );
 
-        return stockInventarioRepository.save(stock);
+        return productoMapper.toStockResponse(stockInventarioRepository.save(stock));
     }
 
     /**
@@ -55,23 +59,23 @@ public class StockInventarioServiceImpl implements StockInventarioService {
      */
     @Override
     @Transactional(readOnly = true)
-    public List<StockInventario> listarProductosConStockBajo() {
-        return stockInventarioRepository.findProductosConStockBajo();
+    public List<StockInventarioResponse> listarProductosConStockBajo() {
+        return stockInventarioRepository.findProductosConStockBajo().stream()
+                .map(productoMapper::toStockResponse)
+                .toList();
     }
     @Override
     @Transactional
     public void descontarStock(Long productoId, Integer cantidad) {
         StockInventario stock = obtenerStockOError(productoId);
-
         if (stock.getCantidadDisponible() < cantidad) {
             throw new IllegalArgumentException(
                     "Stock insuficiente para el producto ID: " + productoId
                             + ". Disponible: " + stock.getCantidadDisponible()
             );
         }
-
         stock.setCantidadDisponible(stock.getCantidadDisponible() - cantidad);
-        stock.setUltimaActualizacion(LocalDateTime.now());
+        stock.setUltimaActualizacion(LocalDateTime.now(ZONA_LIMA));
         stockInventarioRepository.save(stock);
     }
 
@@ -80,7 +84,7 @@ public class StockInventarioServiceImpl implements StockInventarioService {
     public void restaurarStock(Long productoId, Integer cantidad) {
         StockInventario stock = obtenerStockOError(productoId);
         stock.setCantidadDisponible(stock.getCantidadDisponible() + cantidad);
-        stock.setUltimaActualizacion(LocalDateTime.now());
+        stock.setUltimaActualizacion(LocalDateTime.now(ZONA_LIMA));
         stockInventarioRepository.save(stock);
     }
 

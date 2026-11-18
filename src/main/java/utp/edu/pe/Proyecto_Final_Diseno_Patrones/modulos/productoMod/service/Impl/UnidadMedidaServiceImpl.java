@@ -3,32 +3,35 @@ package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.service.Im
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.dto.UnidadMedidaRequest;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.dto.UnidadMedidaResponse;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.mapper.UnidadMedidaMapper;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.model.UnidadMedida;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.repository.UnidadMedidaRepository;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.service.UnidadMedidaService;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class UnidadMedidaServiceImpl implements UnidadMedidaService {
     private final UnidadMedidaRepository unidadMedidaRepository;
-
+    private final UnidadMedidaMapper unidadMedidaMapper;
     /**
      * Registra una nueva unidad de medida.
-     * @param unidadMedida Objeto UnidadMedida a registrar.
+     * @param request Objeto UnidadMedida a registrar.
      * @return La unidad de medida persistida.
      */
     @Override
     @Transactional
-    public UnidadMedida registrarUnidadMedida(UnidadMedida unidadMedida) {
-        // Validar no duplicar por código de unidad de medida
-        unidadMedidaRepository.findByCodigo(unidadMedida.getCodigo()).ifPresent(u -> {
-            throw new IllegalArgumentException("Ya existe una unidad de medida con el código: " + unidadMedida.getCodigo());
+    public UnidadMedidaResponse registrarUnidadMedida(UnidadMedidaRequest request) {
+        unidadMedidaRepository.findByCodigo(request.codigo().trim()).ifPresent(u -> {
+            throw new IllegalArgumentException("Ya existe una unidad de medida con el código: " + request.codigo());
         });
-
-        return unidadMedidaRepository.save(unidadMedida);
+        UnidadMedida unidad = unidadMedidaMapper.toEntity(request);
+        return unidadMedidaMapper.toResponse(unidadMedidaRepository.save(unidad));
     }
 
     /**
@@ -37,10 +40,9 @@ public class UnidadMedidaServiceImpl implements UnidadMedidaService {
      */
     @Override
     @Transactional(readOnly = true)
-    public List<UnidadMedida> listarTodas() {
-        return unidadMedidaRepository.findAll();
+    public List<UnidadMedidaResponse> listarTodas() {
+        return unidadMedidaRepository.findAll().stream().map(unidadMedidaMapper::toResponse).toList();
     }
-
     /**
      * Busca una unidad de medida por su ID.
      * @param id Clave primaria de la unidad de medida.
@@ -48,28 +50,24 @@ public class UnidadMedidaServiceImpl implements UnidadMedidaService {
      */
     @Override
     @Transactional(readOnly = true)
-    public Optional<UnidadMedida> buscarPorId(Long id) {
-        return unidadMedidaRepository.findById(id);
+    public UnidadMedidaResponse buscarPorId(Long id) {
+        UnidadMedida unidad = unidadMedidaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("No se encontró la unidad de medida con ID: " + id));
+        return unidadMedidaMapper.toResponse(unidad);
     }
-
     /**
      * Actualiza la información de una unidad de medida.
      * @param id Clave primaria de la unidad a modificar.
-     * @param unidadMedidaDetalles Nuevos datos a guardar.
+     * @param request Nuevos datos a guardar.
      * @return La unidad de medida actualizada.
      */
     @Override
     @Transactional
-    public UnidadMedida actualizarUnidadMedida(Long id, UnidadMedida unidadMedidaDetalles) {
-        // 1. Verificar la existencia
-        UnidadMedida unidadExistente = unidadMedidaRepository.findById(id)
+    public UnidadMedidaResponse actualizarUnidadMedida(Long id, UnidadMedidaRequest request) {
+        UnidadMedida existente = unidadMedidaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("No se encontró la unidad de medida con ID: " + id));
-
-        // 2. Mapear nuevos atributos
-        unidadExistente.setCodigo(unidadMedidaDetalles.getCodigo());
-        unidadExistente.setDescripcion(unidadMedidaDetalles.getDescripcion());
-
-        return unidadMedidaRepository.save(unidadExistente);
+        unidadMedidaMapper.updateEntityFromRequest(request, existente);
+        return unidadMedidaMapper.toResponse(unidadMedidaRepository.save(existente));
     }
 
     /**
@@ -79,10 +77,9 @@ public class UnidadMedidaServiceImpl implements UnidadMedidaService {
     @Override
     @Transactional
     public void eliminarUnidadMedida(Long id) {
-        // Confirmar la existencia antes de borrar
-        UnidadMedida unidad = unidadMedidaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("No se encontró la unidad de medida con ID: " + id));
-
-        unidadMedidaRepository.delete(unidad);
+        if (!unidadMedidaRepository.existsById(id)) {
+            throw new NoSuchElementException("No se encontró la unidad de medida con ID: " + id);
+        }
+        unidadMedidaRepository.deleteById(id);
     }
 }

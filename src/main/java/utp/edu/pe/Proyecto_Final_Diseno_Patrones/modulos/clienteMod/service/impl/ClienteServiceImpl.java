@@ -10,6 +10,7 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.repository.C
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.service.ClienteService;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 
 @Service
@@ -50,7 +51,7 @@ public class ClienteServiceImpl implements ClienteService {
     @Override
     public void eliminarCliente(Long id) {
         if (!clienteRepository.existsById(id)) {
-            throw new RuntimeException("Cliente no encontrado con id: " + id);
+            throw new NoSuchElementException("Cliente no encontrado con id: " + id);
         }
         clienteRepository.deleteById(id);
     }

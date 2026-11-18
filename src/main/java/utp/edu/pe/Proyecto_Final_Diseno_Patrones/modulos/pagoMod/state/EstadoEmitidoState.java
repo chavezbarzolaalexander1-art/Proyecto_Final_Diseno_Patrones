@@ -2,7 +2,6 @@ package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.state;
 
 import org.springframework.stereotype.Component;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model.ComprobantePago;
-import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model.EstadoComprobante;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.model.EstadoPago;
 
 import java.math.BigDecimal;

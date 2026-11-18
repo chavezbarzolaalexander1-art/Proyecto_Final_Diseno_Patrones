@@ -20,8 +20,10 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.service.Sto
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +52,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         ComprobantePago comprobante = comprobanteFactory.crear(request);
         comprobante.setSerie(serie);
         comprobante.setNumero(numero);
-        comprobante.setFechaEmision(LocalDateTime.now());
+        comprobante.setFechaEmision(LocalDateTime.now(ZoneId.of("America/Lima")));
         comprobante.setCliente(cliente);
         comprobante.setVendedor(vendedor);
         comprobante.setEstadoComprobante(EstadoComprobante.EMITIDO);
@@ -124,7 +126,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
     private <T> T buscarEntidad(Class<T> tipo, Long id, String nombre) {
         T entidad = entityManager.find(tipo, id);
         if (entidad == null) {
-            throw new RuntimeException("No se encontró el " + nombre + " con ID: " + id);
+            throw new NoSuchElementException("No se encontró el " + nombre + " con ID: " + id);
         }
         return entidad;
     }

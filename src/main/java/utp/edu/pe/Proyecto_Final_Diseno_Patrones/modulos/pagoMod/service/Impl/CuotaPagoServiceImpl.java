@@ -15,6 +15,7 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.service.PagoSer
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -43,7 +44,7 @@ public class CuotaPagoServiceImpl implements CuotaPagoService {
             CuotaPago cuota = CuotaPago.builder()
                     .numeroCuota(i)
                     .monto(montoCuota.doubleValue())
-                    .fechaVencimiento(LocalDate.now().plusDays((long) i * dias))
+                    .fechaVencimiento(LocalDate.now(ZoneId.of("America/Lima")).plusDays((long) i * dias))
                     .pagado(false)
                     .comprobantePago(comprobante)
                     .build();

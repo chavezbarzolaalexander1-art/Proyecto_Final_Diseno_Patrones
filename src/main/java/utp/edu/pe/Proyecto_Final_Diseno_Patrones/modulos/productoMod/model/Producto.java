@@ -3,6 +3,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Table(name = "producto")
@@ -43,7 +44,7 @@ public class Producto {
         StockInventario stock = StockInventario.builder()
                 .cantidadDisponible(cantidadInicial != null ? cantidadInicial : 0)
                 .stockMinimo(stockMinimo != null ? stockMinimo : 10)
-                .ultimaActualizacion(LocalDateTime.now())
+                .ultimaActualizacion(LocalDateTime.now(ZoneId.of("America/Lima")))
                 .producto(this)
                 .build();
         this.stockInventario = stock;
