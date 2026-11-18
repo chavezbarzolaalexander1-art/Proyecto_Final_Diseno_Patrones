@@ -3,32 +3,35 @@ package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.service.Im
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.dto.ImpuestoRequest;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.dto.ImpuestoResponse;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.mapper.ImpuestoMapper;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.model.Impuesto;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.repository.ImpuestoRepository;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.service.ImpuestoService;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class ImpuestoServiceImpl implements ImpuestoService {
     private final ImpuestoRepository impuestoRepository;
-
+    private final ImpuestoMapper impuestoMapper;
     /**
      * Registra un nuevo tipo de impuesto en el sistema.
-     * @param impuesto Objeto Impuesto a registrar.
+     * @param request Objeto Impuesto a registrar.
      * @return El impuesto persistido.
      */
     @Override
     @Transactional
-    public Impuesto registrarImpuesto(Impuesto impuesto) {
-        // Validar no duplicar el nombre del impuesto
-        impuestoRepository.findByNombre(impuesto.getNombre()).ifPresent(i -> {
-            throw new IllegalArgumentException("Ya existe un impuesto con el nombre: " + impuesto.getNombre());
+    public ImpuestoResponse registrarImpuesto(ImpuestoRequest request) {
+        impuestoRepository.findByNombre(request.nombre().trim()).ifPresent(i -> {
+            throw new IllegalArgumentException("Ya existe un impuesto con el nombre: " + request.nombre());
         });
-
-        return impuestoRepository.save(impuesto);
+        Impuesto impuesto = impuestoMapper.toEntity(request);
+        return impuestoMapper.toResponse(impuestoRepository.save(impuesto));
     }
 
     /**
@@ -37,10 +40,9 @@ public class ImpuestoServiceImpl implements ImpuestoService {
      */
     @Override
     @Transactional(readOnly = true)
-    public List<Impuesto> listarTodos() {
-        return impuestoRepository.findAll();
+    public List<ImpuestoResponse> listarTodos() {
+        return impuestoRepository.findAll().stream().map(impuestoMapper::toResponse).toList();
     }
-
     /**
      * Busca un impuesto por su ID.
      * @param id Clave primaria del impuesto.
@@ -48,28 +50,24 @@ public class ImpuestoServiceImpl implements ImpuestoService {
      */
     @Override
     @Transactional(readOnly = true)
-    public Optional<Impuesto> buscarPorId(Long id) {
-        return impuestoRepository.findById(id);
+    public ImpuestoResponse buscarPorId(Long id) {
+        Impuesto impuesto = impuestoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("No se encontró el impuesto con ID: " + id));
+        return impuestoMapper.toResponse(impuesto);
     }
-
     /**
      * Actualiza la información y porcentaje de un impuesto existente.
      * @param id Clave primaria del impuesto a actualizar.
-     * @param impuestoDetalles Objeto con los nuevos datos.
+     * @param request Objeto con los nuevos datos.
      * @return El impuesto actualizado.
      */
     @Override
     @Transactional
-    public Impuesto actualizarImpuesto(Long id, Impuesto impuestoDetalles) {
-        // 1. Buscar si el impuesto existe
-        Impuesto impuestoExistente = impuestoRepository.findById(id)
+    public ImpuestoResponse actualizarImpuesto(Long id, ImpuestoRequest request) {
+        Impuesto existente = impuestoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("No se encontró el impuesto con ID: " + id));
-
-        // 2. Mapear nuevos valores
-        impuestoExistente.setNombre(impuestoDetalles.getNombre());
-        impuestoExistente.setPorcentaje(impuestoDetalles.getPorcentaje());
-
-        return impuestoRepository.save(impuestoExistente);
+        impuestoMapper.updateEntityFromRequest(request, existente);
+        return impuestoMapper.toResponse(impuestoRepository.save(existente));
     }
 
     /**
@@ -79,10 +77,9 @@ public class ImpuestoServiceImpl implements ImpuestoService {
     @Override
     @Transactional
     public void eliminarImpuesto(Long id) {
-        // Verificar existencia previa
-        Impuesto impuesto = impuestoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("No se encontró el impuesto con ID: " + id));
-
-        impuestoRepository.delete(impuesto);
+        if (!impuestoRepository.existsById(id)) {
+            throw new NoSuchElementException("No se encontró el impuesto con ID: " + id);
+        }
+        impuestoRepository.deleteById(id);
     }
 }

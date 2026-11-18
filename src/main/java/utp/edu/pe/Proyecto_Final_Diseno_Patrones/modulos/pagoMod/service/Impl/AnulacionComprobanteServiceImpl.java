@@ -16,6 +16,7 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.state.EstadoCom
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.service.StockInventarioService;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
@@ -43,7 +44,7 @@ public class AnulacionComprobanteServiceImpl implements AnulacionComprobanteServ
         // 3. Registrar auditoría de la anulación
         AnulacionComprobante anulacion = AnulacionComprobante.builder()
                 .motivo(request.motivo().trim())
-                .fechaAnulacion(LocalDateTime.now())
+                .fechaAnulacion(LocalDateTime.now(ZoneId.of("America/Lima")))
                 .comprobantePago(comprobante)
                 .build();
         anulacionRepository.save(anulacion);

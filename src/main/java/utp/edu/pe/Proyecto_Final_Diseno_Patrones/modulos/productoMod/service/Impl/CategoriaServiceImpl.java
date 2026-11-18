@@ -3,30 +3,34 @@ package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.service.Im
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.dto.CategoriaRequest;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.dto.CategoriaResponse;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.mapper.CategoriaMapper;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.model.Categoria;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.repository.CategoriaRepository;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.service.CategoriaService;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class CategoriaServiceImpl implements CategoriaService {
     private final CategoriaRepository categoriaRepository;
+    private final CategoriaMapper categoriaMapper;
     /**
      * Registra una nueva categoría en la base de datos.
-     * @param categoria Objeto Categoria a registrar.
+     * @param request Objeto Categoria a registrar.
      * @return La categoría persistida.
      */
     @Override
     @Transactional
-    public Categoria registrarCategoria(Categoria categoria) {
-        // Validar si la categoría ya existe por nombre
-        categoriaRepository.findByNombre(categoria.getNombre()).ifPresent(c -> {
-            throw new IllegalArgumentException("Ya existe una categoría con el nombre: " + categoria.getNombre());
+    public CategoriaResponse registrarCategoria(CategoriaRequest request) {
+        categoriaRepository.findByNombre(request.nombre().trim()).ifPresent(c -> {
+            throw new IllegalArgumentException("Ya existe una categoría con el nombre: " + request.nombre());
         });
-
-        return categoriaRepository.save(categoria);
+        Categoria categoria = categoriaMapper.toEntity(request);
+        return categoriaMapper.toResponse(categoriaRepository.save(categoria));
     }
 
     /**
@@ -35,10 +39,9 @@ public class CategoriaServiceImpl implements CategoriaService {
      */
     @Override
     @Transactional(readOnly = true)
-    public List<Categoria> listarTodas() {
-        return categoriaRepository.findAll();
+    public List<CategoriaResponse> listarTodas() {
+        return categoriaRepository.findAll().stream().map(categoriaMapper::toResponse).toList();
     }
-
     /**
      * Busca una categoría por su identificador primario.
      * @param id Clave primaria de la categoría.
@@ -46,28 +49,24 @@ public class CategoriaServiceImpl implements CategoriaService {
      */
     @Override
     @Transactional(readOnly = true)
-    public Optional<Categoria> buscarPorId(Long id) {
-        return categoriaRepository.findById(id);
+    public CategoriaResponse buscarPorId(Long id) {
+        Categoria categoria = categoriaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("No se encontró la categoría con ID: " + id));
+        return categoriaMapper.toResponse(categoria);
     }
-
     /**
      * Actualiza los datos de una categoría existente.
      * @param id Clave primaria de la categoría a actualizar.
-     * @param categoriaDetalles Objeto con los nuevos valores a asignar.
+     * @param request Objeto con los nuevos valores a asignar.
      * @return La categoría actualizada.
      */
     @Override
     @Transactional
-    public Categoria actualizarCategoria(Long id, Categoria categoriaDetalles) {
-        // 1. Verificar existencia de la categoría
-        Categoria categoriaExistente = categoriaRepository.findById(id)
+    public CategoriaResponse actualizarCategoria(Long id, CategoriaRequest request) {
+        Categoria existente = categoriaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("No se encontró la categoría con ID: " + id));
-
-        // 2. Mapear nuevos datos
-        categoriaExistente.setNombre(categoriaDetalles.getNombre());
-        categoriaExistente.setDescripcion(categoriaDetalles.getDescripcion());
-
-        return categoriaRepository.save(categoriaExistente);
+        categoriaMapper.updateEntityFromRequest(request, existente);
+        return categoriaMapper.toResponse(categoriaRepository.save(existente));
     }
 
     /**
@@ -77,11 +76,10 @@ public class CategoriaServiceImpl implements CategoriaService {
     @Override
     @Transactional
     public void eliminarCategoria(Long id) {
-        // Confirmar la existencia antes de eliminar
-        Categoria categoria = categoriaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("No se encontró la categoría con ID: " + id));
-
-        categoriaRepository.delete(categoria);
+        if (!categoriaRepository.existsById(id)) {
+            throw new NoSuchElementException("No se encontró la categoría con ID: " + id);
+        }
+        categoriaRepository.deleteById(id);
     }
 }
 

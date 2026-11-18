@@ -10,6 +10,7 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.repository.E
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.service.EmpresaService;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -51,7 +52,7 @@ public class EmpresaServiceImpl implements EmpresaService {
     @Override
     public void eliminarEmpresa(Long id) {
         if (!empresaRepository.existsById(id)) {
-            throw new RuntimeException("Empresa no encontrada con id: " + id);
+            throw new NoSuchElementException("Empresa no encontrada con id: " + id);
         }
         empresaRepository.deleteById(id);
     }

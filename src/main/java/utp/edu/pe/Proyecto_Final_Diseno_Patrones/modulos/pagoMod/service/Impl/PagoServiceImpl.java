@@ -20,6 +20,7 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.strategy.Result
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 /**
@@ -48,7 +49,7 @@ public class PagoServiceImpl implements PagoService {
         // 2. Crear la entidad Pago
         Pago pago = Pago.builder()
                 .monto(request.monto())
-                .fechaPago(LocalDateTime.now())
+                .fechaPago(LocalDateTime.now(ZoneId.of("America/Lima")))
                 .numeroTransaccion(request.numeroTransaccion())
                 .comprobantePago(comprobante)
                 .metodoPago(obtenerOCrearMetodo(request.metodoPago()))

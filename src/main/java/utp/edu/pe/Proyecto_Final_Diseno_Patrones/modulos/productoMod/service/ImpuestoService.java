@@ -1,18 +1,14 @@
+// ImpuestoService.java
 package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.service;
 
-import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.model.Impuesto;
-
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.dto.ImpuestoRequest;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.dto.ImpuestoResponse;
 import java.util.List;
-import java.util.Optional;
 
 public interface ImpuestoService {
-    Impuesto registrarImpuesto(Impuesto impuesto);
-
-    List<Impuesto> listarTodos();
-
-    Optional<Impuesto> buscarPorId(Long id);
-
-    Impuesto actualizarImpuesto(Long id, Impuesto impuestoDetalles);
-
+    ImpuestoResponse registrarImpuesto(ImpuestoRequest request);
+    List<ImpuestoResponse> listarTodos();
+    ImpuestoResponse buscarPorId(Long id);
+    ImpuestoResponse actualizarImpuesto(Long id, ImpuestoRequest request);
     void eliminarImpuesto(Long id);
 }

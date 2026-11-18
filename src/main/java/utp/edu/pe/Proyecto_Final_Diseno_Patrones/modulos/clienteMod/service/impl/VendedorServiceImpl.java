@@ -10,6 +10,8 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.repository.V
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.service.VendedorService;
 
 import java.util.List;
+import java.util.NoSuchElementException;
+
 @Service
 @RequiredArgsConstructor
 public class VendedorServiceImpl implements VendedorService {
@@ -50,7 +52,7 @@ public class VendedorServiceImpl implements VendedorService {
     @Override
     public void eliminarVendedor(Long id) {
         if (!vendedorRepository.existsById(id)) {
-            throw new RuntimeException("Vendedor no encontrado con id: " + id);
+            throw new NoSuchElementException("Vendedor no encontrado con id: " + id);
         }
         vendedorRepository.deleteById(id);
     }
