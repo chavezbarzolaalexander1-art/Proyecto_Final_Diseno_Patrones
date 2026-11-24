@@ -64,7 +64,7 @@ public class PagoServiceImpl implements PagoService {
         Pago guardado = pagoRepository.save(pago);
 
         // 5. Evaluar si cambia estadoPago de PENDIENTE a PAGADO
-        double totalPagado = calcularTotalPagado(comprobante.getId());
+        double totalPagado = sumarPagosPorComprobante(comprobante.getId());
         estadoActual.evaluarSiguienteEstadoTrasPago(comprobante, totalPagado);
         comprobanteRepository.save(comprobante);
 
@@ -100,6 +100,10 @@ public class PagoServiceImpl implements PagoService {
     @Override
     @Transactional(readOnly = true)
     public Double calcularTotalPagado(Long comprobanteId) {
+        return sumarPagosPorComprobante(comprobanteId);
+    }
+
+    private double sumarPagosPorComprobante(Long comprobanteId) {
         BigDecimal total = pagoRepository.findByComprobantePagoId(comprobanteId).stream()
                 .map(p -> BigDecimal.valueOf(p.getMonto()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add)

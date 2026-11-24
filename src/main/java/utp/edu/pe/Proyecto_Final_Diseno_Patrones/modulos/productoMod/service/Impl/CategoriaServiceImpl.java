@@ -9,10 +9,8 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.mapper.Cate
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.model.Categoria;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.repository.CategoriaRepository;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.service.CategoriaService;
-
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class CategoriaServiceImpl implements CategoriaService {
