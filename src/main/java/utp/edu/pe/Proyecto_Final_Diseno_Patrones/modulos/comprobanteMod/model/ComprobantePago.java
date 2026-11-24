@@ -61,7 +61,7 @@ public abstract class ComprobantePago {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false, length = 20)
-    private EstadoComprobante EstadoComprobante;
+    private EstadoComprobante estadoComprobante;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estado_pago", nullable = false, length = 20)
