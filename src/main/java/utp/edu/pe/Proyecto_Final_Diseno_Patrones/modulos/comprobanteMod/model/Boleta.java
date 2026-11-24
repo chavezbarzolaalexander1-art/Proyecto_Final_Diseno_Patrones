@@ -1,13 +1,17 @@
 package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
+/**
+ * Entidad que representa una boleta de venta como tipo de comprobante de pago.
+ */
 @Entity
 @Table(name = "boleta")
 @Getter
@@ -15,25 +19,25 @@ import java.util.Map;
 @NoArgsConstructor
 public class Boleta extends ComprobantePago {
 
-    @Column(length = 100)
-    private String observaciones;
+  @Column(length = 100)
+  private String observaciones;
 
-    @Override
-    public TipoComprobante getTipoComprobante() {
-        return TipoComprobante.BOLETA;
-    }
+  @Override
+  public TipoComprobante getTipoComprobante() {
+    return TipoComprobante.BOLETA;
+  }
 
-    @Override
-    public String getTituloDocumento() {
-        return "BOLETA DE VENTA ELECTRÓNICA";
-    }
+  @Override
+  public String getTituloDocumento() {
+    return "BOLETA DE VENTA ELECTRÓNICA";
+  }
 
-    @Override
-    public Map<String, String> getDatosAdicionalesDocumento() {
-        Map<String, String> datos = new LinkedHashMap<>();
-        if (observaciones != null && !observaciones.isBlank()) {
-            datos.put("Observaciones", observaciones);
-        }
-        return datos;
+  @Override
+  public Map<String, String> getDatosAdicionalesDocumento() {
+    Map<String, String> datos = new LinkedHashMap<>();
+    if (observaciones != null && !observaciones.isBlank()) {
+      datos.put("Observaciones", observaciones);
     }
+    return datos;
+  }
 }

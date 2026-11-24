@@ -1,6 +1,11 @@
 package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -9,19 +14,16 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.model.Vended
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.model.CondicionPago;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.model.EstadoPago;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
+/**
+ * Entidad abstracta base que representa un comprobante de pago genérico.
+ */
 @Entity
 @Table(
-        name = "comprobante_pago",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_comprobante_serie_numero",
-                columnNames = {"serie", "numero"}
-        )
+    name = "comprobante_pago",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uk_comprobante_serie_numero",
+        columnNames = {"serie", "numero"}
+    )
 )
 @Inheritance(strategy = InheritanceType.JOINED)
 @Getter
@@ -29,61 +31,84 @@ import java.util.Map;
 @NoArgsConstructor
 public abstract class ComprobantePago {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(nullable = false, length = 4)
-    private String serie;
+  @Column(nullable = false, length = 4)
+  private String serie;
 
-    @Column(nullable = false, length = 8)
-    private String numero;
+  @Column(nullable = false, length = 8)
+  private String numero;
 
-    @Column(nullable = false)
-    private LocalDateTime fechaEmision;
+  @Column(nullable = false)
+  private LocalDateTime fechaEmision;
 
-    @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal subtotal;
+  @Column(nullable = false, precision = 12, scale = 2)
+  private BigDecimal subtotal;
 
-    @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal igv;
+  @Column(nullable = false, precision = 12, scale = 2)
+  private BigDecimal igv;
 
-    @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal total;
+  @Column(nullable = false, precision = 12, scale = 2)
+  private BigDecimal total;
 
-    @ManyToOne
-    @JoinColumn(name = "cliente_id", nullable = false)
-    private Cliente cliente;
+  @ManyToOne
+  @JoinColumn(name = "cliente_id", nullable = false)
+  private Cliente cliente;
 
-    @ManyToOne
-    @JoinColumn(name = "vendedor_id", nullable = false)
-    private Vendedor vendedor;
+  @ManyToOne
+  @JoinColumn(name = "vendedor_id", nullable = false)
+  private Vendedor vendedor;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false, length = 20)
-    private EstadoComprobante estadoComprobante;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "estado", nullable = false, length = 20)
+  private EstadoComprobante estadoComprobante;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "estado_pago", nullable = false, length = 20)
-    private EstadoPago estadoPago;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "estado_pago", nullable = false, length = 20)
+  private EstadoPago estadoPago;
 
-    @ManyToOne
-    @JoinColumn(name = "condicion_pago_id")
-    private CondicionPago condicionPago;
+  @ManyToOne
+  @JoinColumn(name = "condicion_pago_id")
+  private CondicionPago condicionPago;
 
-    @OneToMany(
-            mappedBy = "comprobantePago",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
-    private List<DetalleComprobante> detalles = new ArrayList<>();
+  @OneToMany(
+      mappedBy = "comprobantePago",
+      cascade = CascadeType.ALL,
+      orphanRemoval = true
+  )
+  private List<DetalleComprobante> detalles = new ArrayList<>();
 
-    public void agregarDetalle(DetalleComprobante detalle) {
-        detalles.add(detalle);
-        detalle.setComprobantePago(this);
-    }
-    public abstract TipoComprobante getTipoComprobante();
-    public abstract String getTituloDocumento();
-    public abstract Map<String, String> getDatosAdicionalesDocumento();
+  /**
+   * Agrega un detalle al comprobante y establece la relación bidireccional.
+   *
+   * @param detalle ítem de detalle a asociar con este comprobante
+   */
+  public void agregarDetalle(DetalleComprobante detalle) {
+    detalles.add(detalle);
+    detalle.setComprobantePago(this);
+  }
+
+  /**
+   * Obtiene el tipo específico de comprobante de pago.
+   *
+   * @return tipo de comprobante correspondiente
+   */
+  public abstract TipoComprobante getTipoComprobante();
+
+  /**
+   * Obtiene el título descriptivo del documento según su tipo.
+   *
+   * @return título del documento
+   */
+  public abstract String getTituloDocumento();
+
+  /**
+   * Obtiene los datos adicionales específicos del tipo de documento.
+   *
+   * @return mapa con las etiquetas y valores adicionales del documento
+   */
+  public abstract Map<String, String> getDatosAdicionalesDocumento();
 }
 

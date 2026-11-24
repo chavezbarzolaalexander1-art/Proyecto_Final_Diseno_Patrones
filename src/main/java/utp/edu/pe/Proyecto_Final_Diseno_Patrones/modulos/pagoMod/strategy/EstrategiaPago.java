@@ -9,12 +9,18 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.model.Pago;
  */
 public interface EstrategiaPago {
 
-    /** Nombre del MetodoPago que atiende esta estrategia (por ejemplo, "TARJETA"). */
-    String metodo();
+  /**
+   * Nombre del MetodoPago que atiende esta estrategia (por ejemplo, "TARJETA").
+   */
+  String metodo();
 
-    /** Valida las reglas propias del medio de pago; lanza IllegalArgumentException si no se cumplen. */
-    void validar(Pago pago);
+  /**
+   * Valida las reglas propias del medio de pago; lanza IllegalArgumentException si no se cumplen.
+   */
+  void validar(Pago pago);
 
-    /** Calcula la comisión que se descuenta del monto cobrado. */
-    double calcularComision(double monto);
+  /**
+   * Calcula la comisión que se descuenta del monto cobrado.
+   */
+  double calcularComision(double monto);
 }

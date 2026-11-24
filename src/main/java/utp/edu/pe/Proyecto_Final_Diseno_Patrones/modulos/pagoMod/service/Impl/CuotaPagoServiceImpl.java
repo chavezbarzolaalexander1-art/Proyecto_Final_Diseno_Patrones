@@ -1,5 +1,10 @@
 package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.service.Impl;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,80 +17,81 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.repository.Cuot
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.service.CuotaPagoService;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.service.PagoService;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.List;
-
+/**
+ * Implementación del servicio encargado de gestionar las cuotas de pago y la generación de cronogramas.
+ */
 @Service
 @RequiredArgsConstructor
 public class CuotaPagoServiceImpl implements CuotaPagoService {
-    private final ComprobantePagoRepository comprobantePagoRepository;
-    private final CuotaPagoRepository cuotaPagoRepository;
-    private final PagoService pagoService;
+  private final ComprobantePagoRepository comprobantePagoRepository;
+  private final CuotaPagoRepository cuotaPagoRepository;
+  private final PagoService pagoService;
 
-    @Override
-    @Transactional
-    public void generarCronogramaCuotas(Long comprobanteId, Integer numeroCuotas, Integer diasEntreCuotas) {
-        if (numeroCuotas == null || numeroCuotas <= 1) {
-            return;
-        }
-
-        // Se busca el comprobante dentro del servicio usando el ID
-        ComprobantePago comprobante = comprobantePagoRepository.findById(comprobanteId)
-                .orElseThrow(() -> new RuntimeException("No se encontró el comprobante con ID: " + comprobanteId));
-
-        int dias = (diasEntreCuotas != null && diasEntreCuotas > 0) ? diasEntreCuotas : 30;
-        BigDecimal montoCuota = comprobante.getTotal()
-                .divide(BigDecimal.valueOf(numeroCuotas), 2, RoundingMode.HALF_UP);
-
-        for (int i = 1; i <= numeroCuotas; i++) {
-            CuotaPago cuota = CuotaPago.builder()
-                    .numeroCuota(i)
-                    .monto(montoCuota.doubleValue())
-                    .fechaVencimiento(LocalDate.now(ZoneId.of("America/Lima")).plusDays((long) i * dias))
-                    .pagado(false)
-                    .comprobantePago(comprobante)
-                    .build();
-            cuotaPagoRepository.save(cuota);
-        }
+  @Override
+  @Transactional
+  public void generarCronogramaCuotas(Long comprobanteId, Integer numeroCuotas,
+                                      Integer diasEntreCuotas) {
+    if (numeroCuotas == null || numeroCuotas <= 1) {
+      return;
     }
-    @Override
-    @Transactional(readOnly = true)
-    public List<CuotaPagoResponse> listarPorComprobante(Long comprobanteId) {
-        return cuotaPagoRepository.findByComprobantePagoIdOrderByNumeroCuotaAsc(comprobanteId).stream()
-                .map(c -> new CuotaPagoResponse(
-                        c.getId(),
-                        c.getNumeroCuota(),
-                        c.getMonto(),
-                        c.getFechaVencimiento(),
-                        c.getPagado()
-                ))
-                .toList();
+
+    // Se busca el comprobante dentro del servicio usando el ID
+    ComprobantePago comprobante = comprobantePagoRepository.findById(comprobanteId)
+        .orElseThrow(() -> new RuntimeException("No se encontró el comprobante con ID: "
+            + comprobanteId));
+
+    int dias = (diasEntreCuotas != null && diasEntreCuotas > 0) ? diasEntreCuotas : 30;
+    BigDecimal montoCuota = comprobante.getTotal()
+        .divide(BigDecimal.valueOf(numeroCuotas), 2, RoundingMode.HALF_UP);
+
+    for (int i = 1; i <= numeroCuotas; i++) {
+      CuotaPago cuota = CuotaPago.builder()
+          .numeroCuota(i)
+          .monto(montoCuota.doubleValue())
+          .fechaVencimiento(LocalDate.now(ZoneId.of("America/Lima")).plusDays((long) i * dias))
+          .pagado(false)
+          .comprobantePago(comprobante)
+          .build();
+      cuotaPagoRepository.save(cuota);
     }
-    @Override
-    @Transactional
-    public void marcarCuotaComoPagada(Long cuotaId, String metodoPago, String numeroTransaccion) {
-        CuotaPago cuota = cuotaPagoRepository.findById(cuotaId)
-                .orElseThrow(() -> new RuntimeException("No se encontró la cuota con ID: " + cuotaId));
+  }
 
-        if (Boolean.TRUE.equals(cuota.getPagado())) {
-            throw new IllegalArgumentException("La cuota ya se encuentra pagada.");
-        }
+  @Override
+  @Transactional(readOnly = true)
+  public List<CuotaPagoResponse> listarPorComprobante(Long comprobanteId) {
+    return cuotaPagoRepository.findByComprobantePagoIdOrderByNumeroCuotaAsc(comprobanteId).stream()
+        .map(c -> new CuotaPagoResponse(
+            c.getId(),
+            c.getNumeroCuota(),
+            c.getMonto(),
+            c.getFechaVencimiento(),
+            c.getPagado()
+        ))
+        .toList();
+  }
 
-        // 1. Marcar estado de cuota en el cronograma
-        cuota.setPagado(true);
-        cuotaPagoRepository.save(cuota);
+  @Override
+  @Transactional
+  public void marcarCuotaComoPagada(Long cuotaId, String metodoPago, String numeroTransaccion) {
+    CuotaPago cuota = cuotaPagoRepository.findById(cuotaId)
+        .orElseThrow(() -> new RuntimeException("No se encontró la cuota con ID: " + cuotaId));
 
-        // 2. Registrar la entrada de dinero en el módulo de pagos (dispara el patrón State)
-        RegistrarPagoRequest pagoRequest = new RegistrarPagoRequest(
-                cuota.getComprobantePago().getId(),
-                metodoPago,
-                cuota.getMonto(),
-                numeroTransaccion
-        );
-
-        pagoService.registrarPago(pagoRequest);
+    if (Boolean.TRUE.equals(cuota.getPagado())) {
+      throw new IllegalArgumentException("La cuota ya se encuentra pagada.");
     }
+
+    // 1. Marcar estado de cuota en el cronograma
+    cuota.setPagado(true);
+    cuotaPagoRepository.save(cuota);
+
+    // 2. Registrar la entrada de dinero en el módulo de pagos (dispara el patrón State)
+    RegistrarPagoRequest pagoRequest = new RegistrarPagoRequest(
+        cuota.getComprobantePago().getId(),
+        metodoPago,
+        cuota.getMonto(),
+        numeroTransaccion
+    );
+
+    pagoService.registrarPago(pagoRequest);
+  }
 }

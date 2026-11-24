@@ -4,6 +4,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model.DetalleComprobante;
 
+/**
+ * Repositorio JPA para la gestión de persistencia de {@link DetalleComprobante}.
+ */
 @Repository
 public interface DetalleComprobanteRepository extends JpaRepository<DetalleComprobante, Long> {
 }
