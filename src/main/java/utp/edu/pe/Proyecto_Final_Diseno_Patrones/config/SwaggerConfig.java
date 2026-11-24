@@ -6,19 +6,23 @@ import io.swagger.v3.oas.models.info.License;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Configuracion del Swaguer.
+ */
 @Configuration
 public class SwaggerConfig {
-
-    /**Swagger UI: http://localhost:8080/swagger-ui.html o http://localhost:8080/swagger-ui/index.html*/
-    @Bean
-    public OpenAPI springShopOpenAPI() {
-        return new OpenAPI()
-                .info(new Info()
-                        .title("Factura")
-                        .description("Sistema Factura - Proyecto Final")
-                        .version("v1.0.0")
-                        .license(new License()
-                                .name("Apache 2.0")
-                                .url("http://springdoc.org")));
-    }
+  /**
+   * Swagger UI: http://localhost:8080/swagger-ui.html o http://localhost:8080/swagger-ui/index.html.
+   */
+  @Bean
+  public OpenAPI springShopOpenApi() {
+    return new OpenAPI()
+        .info(new Info()
+            .title("Factura")
+            .description("Sistema Factura - Proyecto Final")
+            .version("v1.0.0")
+            .license(new License()
+                .name("Apache 2.0")
+                .url("http://springdoc.org")));
+  }
 }

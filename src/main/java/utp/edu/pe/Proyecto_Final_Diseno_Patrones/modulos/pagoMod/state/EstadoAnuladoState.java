@@ -3,20 +3,25 @@ package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.state;
 import org.springframework.stereotype.Component;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model.ComprobantePago;
 
+/**
+ * Implementación del patrón State que representa el estado anulado de un comprobante de pago.
+ */
 @Component
 public class EstadoAnuladoState implements EstadoComprobanteState {
-    @Override
-    public void validarPermitePago(ComprobantePago comprobante) {
-        throw new IllegalArgumentException("No se pueden registrar pagos sobre un comprobante ANULADO.");
-    }
+  @Override
+  public void validarPermitePago(ComprobantePago comprobante) {
+    throw new IllegalArgumentException("No se pueden registrar pagos sobre un comprobante ANULADO"
+        + ".");
+  }
 
-    @Override
-    public void evaluarSiguienteEstadoTrasPago(ComprobantePago comprobante, double totalPagadoAcumulado) {
-        // Sin cambios sobre un comprobante anulado
-    }
+  @Override
+  public void evaluarSiguienteEstadoTrasPago(ComprobantePago comprobante,
+                                             double totalPagadoAcumulado) {
+    // Sin cambios sobre un comprobante anulado
+  }
 
-    @Override
-    public void validarPermiteAnulacion(ComprobantePago comprobante) {
-        throw new IllegalArgumentException("El comprobante ya se encuentra ANULADO.");
-    }
+  @Override
+  public void validarPermiteAnulacion(ComprobantePago comprobante) {
+    throw new IllegalArgumentException("El comprobante ya se encuentra ANULADO.");
+  }
 }

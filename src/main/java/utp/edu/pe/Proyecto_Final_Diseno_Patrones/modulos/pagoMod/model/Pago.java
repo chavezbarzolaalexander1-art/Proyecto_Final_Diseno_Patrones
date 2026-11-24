@@ -1,10 +1,16 @@
 package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.model;
+
 import jakarta.persistence.*;
-import lombok.*;
+import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model.ComprobantePago;
 
-import java.time.LocalDateTime;
-
+/**
+ * Entidad que representa un pago registrado y asociado a un comprobante de pago.
+ */
 @Entity
 @Table(name = "pago")
 @Data
@@ -13,30 +19,30 @@ import java.time.LocalDateTime;
 @Builder
 public class Pago {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(nullable = false)
-    private Double monto;
+  @Column(nullable = false)
+  private Double monto;
 
-    @Column(nullable = false)
-    private LocalDateTime fechaPago;
+  @Column(nullable = false)
+  private LocalDateTime fechaPago;
 
-    @Column(length = 100)
-    private String numeroTransaccion;
+  @Column(length = 100)
+  private String numeroTransaccion;
 
-    @ManyToOne
-    @JoinColumn(name = "comprobante_id", nullable = false)
-    private ComprobantePago comprobantePago;
+  @ManyToOne
+  @JoinColumn(name = "comprobante_id", nullable = false)
+  private ComprobantePago comprobantePago;
 
-    @ManyToOne
-    @JoinColumn(name = "metodo_pago_id", nullable = false)
-    private MetodoPago metodoPago;
+  @ManyToOne
+  @JoinColumn(name = "metodo_pago_id", nullable = false)
+  private MetodoPago metodoPago;
 
-    @Column
-    private Double comision;
+  @Column
+  private Double comision;
 
-    @Column
-    private Double montoNeto;
+  @Column
+  private Double montoNeto;
 }

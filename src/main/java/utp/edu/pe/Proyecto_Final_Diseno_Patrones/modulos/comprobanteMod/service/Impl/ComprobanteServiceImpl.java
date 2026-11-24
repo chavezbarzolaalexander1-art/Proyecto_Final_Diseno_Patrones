@@ -1,14 +1,26 @@
 package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.service.Impl;
 
 import jakarta.persistence.EntityManager;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.model.Cliente;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.model.Vendedor;
-import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.dto.*;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.dto.ComprobanteResponse;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.dto.CrearComprobanteRequest;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.dto.DetalleComprobanteRequest;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.dto.DetalleComprobanteResponse;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.factory.ComprobanteFactory;
-import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model.*;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model.ComprobantePago;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model.DetalleComprobante;
+import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.model.EstadoComprobante;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.repository.ComprobantePagoRepository;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.comprobanteMod.service.ComprobanteService;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.pagoMod.model.CondicionPago;
@@ -17,160 +29,164 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.model.Produ
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.repository.ProductoRepository;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.productoMod.service.StockInventarioService;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-
+/**
+ * Implementación de {@link ComprobanteService} para la gestión y emisión de comprobantes de pago.
+ */
 @Service
 @RequiredArgsConstructor
 public class ComprobanteServiceImpl implements ComprobanteService {
-    private final ComprobantePagoRepository comprobanteRepository;
-    private final ProductoRepository productoRepository;
-    private final ComprobanteFactory comprobanteFactory;
-    private final StockInventarioService stockInventarioService;
-    private final EntityManager entityManager;
+  private final ComprobantePagoRepository comprobanteRepository;
+  private final ProductoRepository productoRepository;
+  private final ComprobanteFactory comprobanteFactory;
+  private final StockInventarioService stockInventarioService;
+  private final EntityManager entityManager;
 
-    @Override
-    @Transactional
-    public ComprobanteResponse emitir(CrearComprobanteRequest request) {
-        String serie = request.serie().trim().toUpperCase();
-        String numero = completarNumero(request.numero());
+  @Override
+  @Transactional
+  public ComprobanteResponse emitir(CrearComprobanteRequest request) {
+    String serie = request.serie().trim().toUpperCase();
+    String numero = completarNumero(request.numero());
 
-        if (comprobanteRepository.existsBySerieAndNumero(serie, numero)) {
-            throw new IllegalArgumentException(
-                    "Ya existe el comprobante " + serie + "-" + numero
-            );
-        }
-
-        Cliente cliente = buscarEntidad(Cliente.class, request.clienteId(), "cliente");
-        Vendedor vendedor = buscarEntidad(Vendedor.class, request.vendedorId(), "vendedor");
-
-        ComprobantePago comprobante = comprobanteFactory.crear(request);
-        comprobante.setSerie(serie);
-        comprobante.setNumero(numero);
-        comprobante.setFechaEmision(LocalDateTime.now(ZoneId.of("America/Lima")));
-        comprobante.setCliente(cliente);
-        comprobante.setVendedor(vendedor);
-        comprobante.setEstadoComprobante(EstadoComprobante.EMITIDO);
-        comprobante.setEstadoPago(EstadoPago.PENDIENTE);
-
-        if (request.condicionPagoId() != null) {
-            CondicionPago condicion = buscarEntidad(CondicionPago.class, request.condicionPagoId(), "condición de pago");
-            comprobante.setCondicionPago(condicion);
-        }
-
-        procesarDetallesYTotales(comprobante, request.detalles());
-
-        return convertirRespuesta(comprobanteRepository.save(comprobante));
+    if (comprobanteRepository.existsBySerieAndNumero(serie, numero)) {
+      throw new IllegalArgumentException(
+          "Ya existe el comprobante " + serie + "-" + numero
+      );
     }
 
-    private void procesarDetallesYTotales(ComprobantePago comprobante, List<DetalleComprobanteRequest> detallesRequest) {
-        BigDecimal subtotalGeneral = BigDecimal.ZERO;
-        BigDecimal igvGeneral = BigDecimal.ZERO;
+    Cliente cliente = buscarEntidad(Cliente.class, request.clienteId(), "cliente");
+    Vendedor vendedor = buscarEntidad(Vendedor.class, request.vendedorId(), "vendedor");
 
-        for (DetalleComprobanteRequest item : detallesRequest) {
-            Producto producto = productoRepository.findById(item.productoId())
-                    .orElseThrow(() -> new RuntimeException("No se encontró el producto con ID: " + item.productoId()));
+    ComprobantePago comprobante = comprobanteFactory.crear(request);
+    comprobante.setSerie(serie);
+    comprobante.setNumero(numero);
+    comprobante.setFechaEmision(LocalDateTime.now(ZoneId.of("America/Lima")));
+    comprobante.setCliente(cliente);
+    comprobante.setVendedor(vendedor);
+    comprobante.setEstadoComprobante(EstadoComprobante.EMITIDO);
+    comprobante.setEstadoPago(EstadoPago.PENDIENTE);
 
-            if (producto.getPrecioUnitario() == null || producto.getPrecioUnitario() < 0) {
-                throw new IllegalArgumentException("El producto " + producto.getCodigo() + " no tiene un precio válido");
-            }
-
-            // Delegación del descuento de inventario
-            stockInventarioService.descontarStock(producto.getId(), item.cantidad());
-
-            BigDecimal precioUnitario = BigDecimal.valueOf(producto.getPrecioUnitario()).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal subtotalDetalle = precioUnitario.multiply(BigDecimal.valueOf(item.cantidad())).setScale(2, RoundingMode.HALF_UP);
-
-            BigDecimal porcentajeImpuesto = (producto.getImpuesto() == null || producto.getImpuesto().getPorcentaje() == null)
-                    ? BigDecimal.ZERO
-                    : BigDecimal.valueOf(producto.getImpuesto().getPorcentaje());
-
-            BigDecimal igvDetalle = subtotalDetalle.multiply(porcentajeImpuesto).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-
-            DetalleComprobante detalle = DetalleComprobante.builder()
-                    .producto(producto)
-                    .cantidad(item.cantidad())
-                    .precioUnitario(precioUnitario)
-                    .subtotal(subtotalDetalle)
-                    .build();
-
-            comprobante.agregarDetalle(detalle);
-            subtotalGeneral = subtotalGeneral.add(subtotalDetalle);
-            igvGeneral = igvGeneral.add(igvDetalle);
-        }
-
-        comprobante.setSubtotal(subtotalGeneral.setScale(2, RoundingMode.HALF_UP));
-        comprobante.setIgv(igvGeneral.setScale(2, RoundingMode.HALF_UP));
-        comprobante.setTotal(subtotalGeneral.add(igvGeneral).setScale(2, RoundingMode.HALF_UP));
+    if (request.condicionPagoId() != null) {
+      CondicionPago condicion = buscarEntidad(CondicionPago.class, request.condicionPagoId(),
+          "condición de pago");
+      comprobante.setCondicionPago(condicion);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<ComprobanteResponse> listarTodos() {
-        return comprobanteRepository.findAll().stream().map(this::convertirRespuesta).toList();
+    procesarDetallesyTotales(comprobante, request.detalles());
+
+    return convertirRespuesta(comprobanteRepository.save(comprobante));
+  }
+
+  private void procesarDetallesyTotales(ComprobantePago comprobante,
+                                        List<DetalleComprobanteRequest> detallesRequest) {
+    BigDecimal subtotalGeneral = BigDecimal.ZERO;
+    BigDecimal igvGeneral = BigDecimal.ZERO;
+
+    for (DetalleComprobanteRequest item : detallesRequest) {
+      Producto producto = productoRepository.findById(item.productoId())
+          .orElseThrow(() -> new RuntimeException("No se encontró el producto con ID: "
+              + item.productoId()));
+
+      if (producto.getPrecioUnitario() == null || producto.getPrecioUnitario() < 0) {
+        throw new IllegalArgumentException("El producto " + producto.getCodigo() + " no tiene un "
+            + "precio válido");
+      }
+
+      // Delegación del descuento de inventario
+      stockInventarioService.descontarStock(producto.getId(), item.cantidad());
+
+      BigDecimal precioUnitario = BigDecimal.valueOf(producto.getPrecioUnitario()).setScale(2,
+          RoundingMode.HALF_UP);
+      BigDecimal subtotalDetalle =
+          precioUnitario.multiply(BigDecimal.valueOf(item.cantidad())).setScale(2,
+              RoundingMode.HALF_UP);
+
+      BigDecimal porcentajeImpuesto =
+          (producto.getImpuesto() == null || producto.getImpuesto().getPorcentaje() == null)
+              ? BigDecimal.ZERO
+              : BigDecimal.valueOf(producto.getImpuesto().getPorcentaje());
+
+      BigDecimal igvDetalle =
+          subtotalDetalle.multiply(porcentajeImpuesto).divide(BigDecimal.valueOf(100), 2,
+              RoundingMode.HALF_UP);
+
+      DetalleComprobante detalle = DetalleComprobante.builder()
+          .producto(producto)
+          .cantidad(item.cantidad())
+          .precioUnitario(precioUnitario)
+          .subtotal(subtotalDetalle)
+          .build();
+
+      comprobante.agregarDetalle(detalle);
+      subtotalGeneral = subtotalGeneral.add(subtotalDetalle);
+      igvGeneral = igvGeneral.add(igvDetalle);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public ComprobanteResponse buscarPorId(Long id) {
-        ComprobantePago comprobante = comprobanteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("No se encontró el comprobante con ID: " + id));
-        return convertirRespuesta(comprobante);
+    comprobante.setSubtotal(subtotalGeneral.setScale(2, RoundingMode.HALF_UP));
+    comprobante.setIgv(igvGeneral.setScale(2, RoundingMode.HALF_UP));
+    comprobante.setTotal(subtotalGeneral.add(igvGeneral).setScale(2, RoundingMode.HALF_UP));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<ComprobanteResponse> listarTodos() {
+    return comprobanteRepository.findAll().stream().map(this::convertirRespuesta).toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public ComprobanteResponse buscarPorId(Long id) {
+    ComprobantePago comprobante = comprobanteRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("No se encontró el comprobante con ID: " + id));
+    return convertirRespuesta(comprobante);
+  }
+
+  private <T> T buscarEntidad(Class<T> tipo, Long id, String nombre) {
+    T entidad = entityManager.find(tipo, id);
+    if (entidad == null) {
+      throw new NoSuchElementException("No se encontró el " + nombre + " con ID: " + id);
     }
+    return entidad;
+  }
 
-    private <T> T buscarEntidad(Class<T> tipo, Long id, String nombre) {
-        T entidad = entityManager.find(tipo, id);
-        if (entidad == null) {
-            throw new NoSuchElementException("No se encontró el " + nombre + " con ID: " + id);
-        }
-        return entidad;
-    }
+  private String completarNumero(String numero) {
+    return String.format("%08d", Long.parseLong(numero.trim()));
+  }
 
-    private String completarNumero(String numero) {
-        return String.format("%08d", Long.parseLong(numero.trim()));
-    }
+  private ComprobanteResponse convertirRespuesta(ComprobantePago comprobante) {
+    List<DetalleComprobanteResponse> detalles = comprobante.getDetalles().stream()
+        .map(detalle -> new DetalleComprobanteResponse(
+            detalle.getId(),
+            detalle.getProducto().getId(),
+            detalle.getProducto().getCodigo(),
+            detalle.getProducto().getNombre(),
+            detalle.getCantidad(),
+            detalle.getPrecioUnitario(),
+            detalle.getSubtotal()
+        ))
+        .toList();
+    // la propia entidad sabe su tipo y sus datos específicos.
+    Map<String, String> datosExtra = comprobante.getDatosAdicionalesDocumento();
 
-    private ComprobanteResponse convertirRespuesta(ComprobantePago comprobante) {
-        List<DetalleComprobanteResponse> detalles = comprobante.getDetalles().stream()
-                .map(detalle -> new DetalleComprobanteResponse(
-                        detalle.getId(),
-                        detalle.getProducto().getId(),
-                        detalle.getProducto().getCodigo(),
-                        detalle.getProducto().getNombre(),
-                        detalle.getCantidad(),
-                        detalle.getPrecioUnitario(),
-                        detalle.getSubtotal()
-                ))
-                .toList();
-
-       //la propia entidad sabe su tipo y sus datos específicos
-        Map<String, String> datosExtra = comprobante.getDatosAdicionalesDocumento();
-
-        return new ComprobanteResponse(
-                comprobante.getId(),
-                comprobante.getTipoComprobante(),
-                comprobante.getSerie(),
-                comprobante.getNumero(),
-                comprobante.getFechaEmision(),
-                comprobante.getSubtotal(),
-                comprobante.getIgv(),
-                comprobante.getTotal(),
-                comprobante.getCliente().getId(),
-                comprobante.getCliente().getRazonSocialONombre(),
-                comprobante.getVendedor().getId(),
-                comprobante.getVendedor().getNombres() + " " + comprobante.getVendedor().getApellidos(),
-                comprobante.getEstadoComprobante().name(),
-                comprobante.getEstadoPago().name(),
-                comprobante.getCondicionPago(),
-                datosExtra.get("Observaciones"),
-                datosExtra.get("Orden de Compra"),
-                datosExtra.get("Guía de Remisión"),
-                detalles
-        );
-    }
+    return new ComprobanteResponse(
+        comprobante.getId(),
+        comprobante.getTipoComprobante(),
+        comprobante.getSerie(),
+        comprobante.getNumero(),
+        comprobante.getFechaEmision(),
+        comprobante.getSubtotal(),
+        comprobante.getIgv(),
+        comprobante.getTotal(),
+        comprobante.getCliente().getId(),
+        comprobante.getCliente().getRazonSocialONombre(),
+        comprobante.getVendedor().getId(),
+        comprobante.getVendedor().getNombres() + " " + comprobante.getVendedor().getApellidos(),
+        comprobante.getEstadoComprobante().name(),
+        comprobante.getEstadoPago().name(),
+        comprobante.getCondicionPago(),
+        datosExtra.get("Observaciones"),
+        datosExtra.get("Orden de Compra"),
+        datosExtra.get("Guía de Remisión"),
+        detalles
+    );
+  }
 }
