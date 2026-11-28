@@ -11,6 +11,9 @@ import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.model.Client
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.repository.ClienteRepository;
 import utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.service.ClienteService;
 
+
+
+
 /**
  * Implementación de {@link ClienteService} para la gestión de clientes.
  */
@@ -23,6 +26,7 @@ public class ClienteServiceImpl implements ClienteService {
   @Override
   public ClienteResponse guardarCliente(ClienteRequest request) {
     Cliente cliente = clienteMapper.toEntity(request);
+    validarValueObjects(cliente);
     Cliente clienteGuardado = clienteRepository.save(cliente);
     return clienteMapper.toResponse(clienteGuardado);
   }
@@ -32,8 +36,7 @@ public class ClienteServiceImpl implements ClienteService {
     Cliente clienteExistente = clienteRepository.findById(id)
         .orElseThrow(() -> new RuntimeException("Cliente no encontrado con id: " + id));
     clienteMapper.updateEntityFromRequest(request, clienteExistente);
-
-
+    validarValueObjects(clienteExistente);
     return clienteMapper.toResponse(clienteRepository.save(clienteExistente));
   }
 
@@ -55,5 +58,14 @@ public class ClienteServiceImpl implements ClienteService {
       throw new NoSuchElementException("Cliente no encontrado con id: " + id);
     }
     clienteRepository.deleteById(id);
+  }
+
+  private void validarValueObjects(Cliente cliente) {
+    if (cliente.getDocumentoIdentidad() != null) {
+      cliente.getDocumentoIdentidad().validar();
+    }
+    if (cliente.getDatosContacto() != null) {
+      cliente.getDatosContacto().validar();
+    }
   }
 }

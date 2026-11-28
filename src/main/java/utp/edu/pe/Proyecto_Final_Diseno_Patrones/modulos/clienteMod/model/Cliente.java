@@ -24,18 +24,11 @@ public class Cliente {
   @Column(nullable = false, length = 150)
   private String razonSocialONombre;
 
-  @Column(nullable = false, unique = true, length = 20)
-  private String numeroDocumento;
+  @Embedded
+  private DocumentoIdentidad documentoIdentidad;
 
-  @Column(length = 100)
-  private String email;
-
-  @Column(length = 15)
-  private String telefono;
-
-  @Enumerated(EnumType.STRING)
-  @Column(name = "tipo_documento", nullable = false, length = 20)
-  private TipoDocumento tipoDocumento;
+  @Embedded
+  private DatosContacto datosContacto;
 
   @Embedded
   private DireccionCliente direccion;

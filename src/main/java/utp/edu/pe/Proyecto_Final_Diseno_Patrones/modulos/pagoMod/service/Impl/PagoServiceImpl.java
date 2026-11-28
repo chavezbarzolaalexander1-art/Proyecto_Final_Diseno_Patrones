@@ -48,6 +48,10 @@ public class PagoServiceImpl implements PagoService {
     EstadoComprobanteState estadoActual =
         contextoEstado.obtenerEstado(comprobante.getEstadoComprobante());
     estadoActual.validarPermitePago(comprobante);
+    //Validacion para que si es "Contado" reciba el total.
+    if (comprobante.getCondicionPago() != null) {
+      comprobante.getCondicionPago().validarPago(request.monto(), comprobante.getTotal());
+    }
 
     // 2. Crear la entidad Pago
     Pago pago = Pago.builder()

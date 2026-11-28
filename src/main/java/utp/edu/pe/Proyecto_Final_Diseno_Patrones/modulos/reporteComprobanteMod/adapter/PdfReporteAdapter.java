@@ -96,8 +96,10 @@ public class PdfReporteAdapter implements GeneradorReporteComprobante {
       tablaDatos.setWidthPercentage(100);
       agregarFilaClaveValor(tablaDatos, "Cliente:",
           comprobante.getCliente().getRazonSocialONombre(), fuenteNegrita, fuenteNormal);
-      agregarFilaClaveValor(tablaDatos, comprobante.getCliente().getTipoDocumento().name() + ":",
-          comprobante.getCliente().getNumeroDocumento(), fuenteNegrita, fuenteNormal);
+      agregarFilaClaveValor(tablaDatos,
+          comprobante.getCliente().getDocumentoIdentidad().getTipoDocumento().name() + ":",
+          comprobante.getCliente().getDocumentoIdentidad().getNumeroDocumento(),
+          fuenteNegrita, fuenteNormal);
       if (comprobante.getCliente().getDireccion() != null) {
         agregarFilaClaveValor(tablaDatos, "Dirección:",
             comprobante.getCliente().getDireccion().getDireccion(), fuenteNegrita, fuenteNormal);

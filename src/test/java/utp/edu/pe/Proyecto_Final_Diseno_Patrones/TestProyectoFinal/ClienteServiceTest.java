@@ -34,6 +34,24 @@ class ClienteServiceTest {
   @Autowired
   private VendedorService vendedorService;
 
+  @Test
+  void rechazaDocumentoIdentidadInvalido() {
+    ClienteRequest dniInvalido = new ClienteRequest(
+        "Juan Perez", "123", "juan@mail.com", "999888777",
+        TipoDocumento.DNI, new DireccionDto("Av. Lima 100", "Lima", "Lima", "Lima")
+    );
+    assertThrows(IllegalArgumentException.class, () -> clienteService.guardarCliente(dniInvalido));
+  }
+
+  @Test
+  void rechazaDatosContactoInvalidos() {
+    ClienteRequest emailInvalido = new ClienteRequest(
+        "Juan Perez", "12345678", "correo-sin-arroba", "999888777",
+        TipoDocumento.DNI, new DireccionDto("Av. Lima 100", "Lima", "Lima", "Lima")
+    );
+    assertThrows(IllegalArgumentException.class, () -> clienteService.guardarCliente(emailInvalido));
+  }
+
   private ClienteRequest crearClienteRequest(String doc, String nombre) {
     return new ClienteRequest(
         nombre, doc, "correo@empresa.pe", "999111222",
