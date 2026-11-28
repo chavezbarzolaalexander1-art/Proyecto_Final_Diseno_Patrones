@@ -1,6 +1,7 @@
 package utp.edu.pe.Proyecto_Final_Diseno_Patrones.modulos.clienteMod.model;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,6 +10,7 @@ import lombok.NoArgsConstructor;
 /**
  * Clase que representa la dirección asociada a un cliente.
  */
+@Embeddable
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

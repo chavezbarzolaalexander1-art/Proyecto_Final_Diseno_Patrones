@@ -97,9 +97,9 @@ public class XmlReporteAdapter implements GeneradorReporteComprobante {
       Element receptor = doc.createElement("Receptor");
       root.appendChild(receptor);
       agregarElemento(doc, receptor, "TipoDocumento",
-          comprobante.getCliente().getTipoDocumento().name());
+          comprobante.getCliente().getDocumentoIdentidad().getTipoDocumento().name());
       agregarElemento(doc, receptor, "NumeroDocumento",
-          comprobante.getCliente().getNumeroDocumento());
+          comprobante.getCliente().getDocumentoIdentidad().getNumeroDocumento());
       agregarElemento(doc, receptor, "RazonSocialONombre",
           comprobante.getCliente().getRazonSocialONombre());
       if (comprobante.getCliente().getDireccion() != null) {

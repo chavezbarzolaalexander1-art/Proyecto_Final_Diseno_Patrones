@@ -20,6 +20,10 @@ public interface ClienteMapper {
    * @param cliente Entidad del cliente.
    * @return DTO de respuesta del cliente.
    */
+  @Mapping(source = "documentoIdentidad.numeroDocumento", target = "numeroDocumento")
+  @Mapping(source = "documentoIdentidad.tipoDocumento", target = "tipoDocumento")
+  @Mapping(source = "datosContacto.email", target = "email")
+  @Mapping(source = "datosContacto.telefono", target = "telefono")
   ClienteResponse toResponse(Cliente cliente);
 
   /**
@@ -29,6 +33,10 @@ public interface ClienteMapper {
    * @return Entidad cliente.
    */
   @Mapping(target = "id", ignore = true)
+  @Mapping(target = "documentoIdentidad.tipoDocumento", source = "tipoDocumento")
+  @Mapping(target = "documentoIdentidad.numeroDocumento", source = "numeroDocumento")
+  @Mapping(target = "datosContacto.email", source = "email")
+  @Mapping(target = "datosContacto.telefono", source = "telefono")
   Cliente toEntity(ClienteRequest request);
 
   /**
@@ -54,5 +62,9 @@ public interface ClienteMapper {
    * @param cliente Entidad cliente que será actualizada.
    */
   @Mapping(target = "id", ignore = true)
+  @Mapping(target = "documentoIdentidad.tipoDocumento", source = "tipoDocumento")
+  @Mapping(target = "documentoIdentidad.numeroDocumento", source = "numeroDocumento")
+  @Mapping(target = "datosContacto.email", source = "email")
+  @Mapping(target = "datosContacto.telefono", source = "telefono")
   void updateEntityFromRequest(ClienteRequest request, @MappingTarget Cliente cliente);
 }
